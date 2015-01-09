@@ -66,13 +66,14 @@ HEADER = $(INCDIR)/AttributeOption.h \
          $(INCDIR)/LD/GNUArchiveReader.h \
          $(INCDIR)/LD/Group.h \
          $(INCDIR)/LD/GroupReader.h \
-	 $(INCDIR)/LD/IdenticalCodeFolding.h \
+         $(INCDIR)/LD/IdenticalCodeFolding.h \
          $(INCDIR)/LD/LDContext.h \
          $(INCDIR)/LD/LDFileFormat.h \
          $(INCDIR)/LD/LDReader.h \
          $(INCDIR)/LD/LDSection.h \
          $(INCDIR)/LD/LDSymbol.h \
          $(INCDIR)/LD/MergedStringTable.h \
+         $(INCDIR)/LD/MergeString.h \
          $(INCDIR)/LD/MsgHandler.h \
          $(INCDIR)/LD/NamePool.h \
          $(INCDIR)/LD/ObjectReader.h \

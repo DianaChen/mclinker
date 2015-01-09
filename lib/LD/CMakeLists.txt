@@ -36,6 +36,7 @@ add_llvm_library(MCLDLD
   LDReader.cpp
   LDSection.cpp
   LDSymbol.cpp
+  MergeString.cpp
   MergedStringTable.cpp
   MsgHandler.cpp
   NamePool.cpp

@@ -64,6 +64,7 @@ SOURCE = ADT/StringEntry.cpp \
 	LD/LDSection.cpp \
 	LD/LDSymbol.cpp \
 	LD/MergedStringTable.cpp \
+	LD/MergeString.cpp \
 	LD/MsgHandler.cpp \
 	LD/NamePool.cpp \
 	LD/ObjectWriter.cpp \
