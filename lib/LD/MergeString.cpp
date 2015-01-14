@@ -31,9 +31,18 @@ MergeString::MergeString(LDSection& pSection)
   m_pSectionData = SectionData::Create(pSection);
 }
 
-uint64_t MergeString::getOutputOffset(RegionFragment& pFrag) const {
-  Entry& entry = llvm::cast<Entry>(pFrag);
+uint64_t MergeString::getOutputOffset(const Fragment& pFrag) const {
+  const Entry& entry = llvm::cast<const Entry>(pFrag);
   return entry.getOutputEntry().getOffset();
+}
+
+Fragment& MergeString::getOutputFragment(Fragment& pFrag) {
+  return llvm::cast<Entry>(pFrag).getOutputEntry();
+}
+
+const Fragment&
+MergeString::getOutputFragment(const Fragment& pFrag) const {
+  return llvm::cast<Entry>(pFrag).getOutputEntry();
 }
 
 //===----------------------------------------------------------------------===//

@@ -43,7 +43,13 @@ class MergeString {
   SectionData& getSectionData() { return *m_pSectionData; }
 
   /// getOutputOffset - get the output offset of the given RegionFragment
-  uint64_t getOutputOffset(RegionFragment& pFrag) const;
+  uint64_t getOutputOffset(const Fragment& pFrag) const;
+
+  /// getOutputFragment - get the output fragment of the given merge string
+  /// fragment
+  Fragment& getOutputFragment(Fragment& pFrag);
+
+  const Fragment& getOutputFragment(const Fragment& pFrag) const;
 
   /// getOutputOffset - get the output offset from the specfied input offset
   /// pInputOffset
@@ -74,6 +80,9 @@ class MergeString {
     /// entry has been merged to. If this entry itself is the output entry,
     /// than return itself.
     Entry& getOutputEntry()
+    { assert(m_pOutEntry != NULL); return *m_pOutEntry; }
+
+    const Entry& getOutputEntry() const
     { assert(m_pOutEntry != NULL); return *m_pOutEntry; }
 
     // setOutputEntry - when this entry is merged, set the target output entry
