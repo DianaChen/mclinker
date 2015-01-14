@@ -74,6 +74,7 @@ HEADER = $(INCDIR)/AttributeOption.h \
          $(INCDIR)/LD/LDSymbol.h \
          $(INCDIR)/LD/MergedStringTable.h \
          $(INCDIR)/LD/MergeString.h \
+         $(INCDIR)/LD/MergeStringReader.h \
          $(INCDIR)/LD/MsgHandler.h \
          $(INCDIR)/LD/NamePool.h \
          $(INCDIR)/LD/ObjectReader.h \
