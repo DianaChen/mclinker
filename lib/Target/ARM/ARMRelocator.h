@@ -96,13 +96,13 @@ class ARMRelocator : public Relocator {
   /// access a function pointer.
   virtual bool mayHaveFunctionPointerAccess(const Relocation& pReloc) const;
 
-  /// getDebugStringOffset - get the offset from the relocation target. This is
-  /// used to get the debug string offset.
-  uint32_t getDebugStringOffset(Relocation& pReloc) const;
+  /// getMergeStringOffset - get the offset from the relocation target. This is
+  /// used to get the relocation target symbol offset.
+  uint32_t getMergeStringOffset(Relocation& pReloc) const;
 
-  /// applyDebugStringOffset - apply the relocation target to specific offset.
-  /// This is used to set the debug string offset.
-  void applyDebugStringOffset(Relocation& pReloc, uint32_t pOffset);
+  /// applyMergeStringOffset - apply the relocation target to specific offset.
+  /// This is used to set the relocation against merge string sections.
+  void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset);
 
  private:
   void scanLocalReloc(Relocation& pReloc, const LDSection& pSection);

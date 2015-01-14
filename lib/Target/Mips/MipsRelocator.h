@@ -65,13 +65,13 @@ class MipsRelocator : public Relocator {
 
   Result applyRelocation(Relocation& pReloc);
 
-  /// getDebugStringOffset - get the offset from the relocation target. This is
-  /// used to get the debug string offset.
-  uint32_t getDebugStringOffset(Relocation& pReloc) const;
+  /// getMergeStringOffset - get the offset from the relocation target. This is
+  /// used to get the relocation target symbol offset.
+  uint32_t getMergeStringOffset(Relocation& pReloc) const;
 
-  /// applyDebugStringOffset - apply the relocation target to specific offset.
-  /// This is used to set the debug string offset.
-  void applyDebugStringOffset(Relocation& pReloc, uint32_t pOffset);
+  /// applyMergeStringOffset - apply the relocation target to specific offset.
+  /// This is used to set the relocation against merge string sections.
+  void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset);
 
   const Input& getApplyingInput() const { return *m_pApplyingInput; }
 

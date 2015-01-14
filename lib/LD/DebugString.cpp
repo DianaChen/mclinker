@@ -75,11 +75,11 @@ void DebugString::applyOffset(Relocation& pReloc, TargetLDBackend& pBackend) {
         llvm::cast<RegionFragment>(info->outSymbol()->fragRef()->frag());
     d_str = frag->getRegion();
   }
-  uint32_t offset = pBackend.getRelocator()->getDebugStringOffset(pReloc);
+  uint32_t offset = pBackend.getRelocator()->getMergeStringOffset(pReloc);
   const char* str = d_str.data() + offset;
 
   // apply the relocation
-  pBackend.getRelocator()->applyDebugStringOffset(pReloc,
+  pBackend.getRelocator()->applyMergeStringOffset(pReloc,
       m_StringTable.getOutputOffset(llvm::StringRef(str, string_length(str))));
 }
 

@@ -683,9 +683,35 @@ bool MipsRelocator::isN64ABI() const {
   return config().targets().is64Bits();
 }
 
-uint32_t MipsRelocator::getDebugStringOffset(Relocation& pReloc) const {
+uint64_t MipsRelocator::getPLTAddress(ResolveInfo& rsym) {
+  assert((rsym.reserved() & MipsRelocator::ReservePLT) &&
+         "Symbol does not require a PLT entry");
+
+  SymPLTMap::const_iterator it = m_SymPLTMap.find(&rsym);
+
+  Fragment* plt;
+
+  if (it != m_SymPLTMap.end()) {
+    plt = it->second.first;
+  } else {
+    plt = getTarget().getPLT().consume();
+
+    Fragment* got = getTarget().getGOTPLT().consume();
+    Relocation* rel = getTarget().getRelPLT().consumeEntry();
+
+    rel->setType(llvm::ELF::R_MIPS_JUMP_SLOT);
+    rel->targetRef().assign(*got);
+    rel->setSymInfo(&rsym);
+
+    m_SymPLTMap[&rsym] = PLTDescriptor(plt, got);
+  }
+
+  return getTarget().getPLT().addr() + plt->getOffset();
+}
+
+uint32_t MipsRelocator::getMergeStringOffset(Relocation& pReloc) const {
   if (pReloc.type() != llvm::ELF::R_MIPS_32)
-    error(diag::unsupport_reloc_for_debug_string)
+    error(diag::unsupport_reloc_for_merge_string)
         << getName(pReloc.type()) << "mclinker@googlegroups.com";
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target();
@@ -694,7 +720,7 @@ uint32_t MipsRelocator::getDebugStringOffset(Relocation& pReloc) const {
                pReloc.target() + pReloc.addend();
 }
 
-void MipsRelocator::applyDebugStringOffset(Relocation& pReloc,
+void MipsRelocator::applyMergeStringOffset(Relocation& pReloc,
                                            uint32_t pOffset) {
   pReloc.target() = pOffset;
 }

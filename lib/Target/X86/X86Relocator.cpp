@@ -830,9 +830,9 @@ void X86_32Relocator::convertTLSIEtoLE(Relocation& pReloc,
   pReloc.setType(llvm::ELF::R_386_TLS_LE);
 }
 
-uint32_t X86_32Relocator::getDebugStringOffset(Relocation& pReloc) const {
+uint32_t X86_32Relocator::getMergeStringOffset(Relocation& pReloc) const {
   if (pReloc.type() != llvm::ELF::R_386_32)
-    error(diag::unsupport_reloc_for_debug_string)
+    error(diag::unsupport_reloc_for_merge_string)
         << getName(pReloc.type()) << "mclinker@googlegroups.com";
 
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
@@ -842,7 +842,7 @@ uint32_t X86_32Relocator::getDebugStringOffset(Relocation& pReloc) const {
                pReloc.target() + pReloc.addend();
 }
 
-void X86_32Relocator::applyDebugStringOffset(Relocation& pReloc,
+void X86_32Relocator::applyMergeStringOffset(Relocation& pReloc,
                                              uint32_t pOffset) {
   pReloc.target() = pOffset;
 }
@@ -1499,9 +1499,9 @@ void X86_64Relocator::scanGlobalReloc(Relocation& pReloc,
   }  // end switch
 }
 
-uint32_t X86_64Relocator::getDebugStringOffset(Relocation& pReloc) const {
+uint32_t X86_64Relocator::getMergeStringOffset(Relocation& pReloc) const {
   if (pReloc.type() != llvm::ELF::R_X86_64_32)
-    error(diag::unsupport_reloc_for_debug_string)
+    error(diag::unsupport_reloc_for_merge_string)
         << getName(pReloc.type()) << "mclinker@googlegroups.com";
 
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
@@ -1511,7 +1511,7 @@ uint32_t X86_64Relocator::getDebugStringOffset(Relocation& pReloc) const {
                pReloc.target() + pReloc.addend();
 }
 
-void X86_64Relocator::applyDebugStringOffset(Relocation& pReloc,
+void X86_64Relocator::applyMergeStringOffset(Relocation& pReloc,
                                              uint32_t pOffset) {
   pReloc.target() = pOffset;
 }

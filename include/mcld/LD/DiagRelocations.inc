@@ -64,9 +64,9 @@ DIAG(unsupported_cond_branch_reloc,
      "supported yet",
      "applying relocation `%0', conditional branch to PLT in THUMB-2 not "
      "supported yet")
-DIAG(unsupport_reloc_for_debug_string,
+DIAG(unsupport_reloc_for_merge_string,
      DiagnosticEngine::Error,
-     "applying relocation `%0' for .debug_str is not supported. "
+     "applying relocation `%0' for Merge String section is not supported. "
      "Please report to %1",
-     "applying relocation `%0' for .debug_str is not supported. "
+     "applying relocation `%0' for Merge String section is not supported. "
      "Please report to %1")

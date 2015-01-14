@@ -105,13 +105,13 @@ class HexagonRelocator : public Relocator {
   const RelRelMap& getRelRelMap() const { return m_RelRelMap; }
   RelRelMap& getRelRelMap() { return m_RelRelMap; }
 
-  /// getDebugStringOffset - get the offset from the relocation target. This is
-  /// used to get the debug string offset.
-  uint32_t getDebugStringOffset(Relocation& pReloc) const { return 0; }
+  /// getMergeStringOffset - get the offset from the relocation target. This is
+  /// used to get the relocation target symbol offset.
+  uint32_t getMergeStringOffset(Relocation& pReloc) const { return 0; }
 
-  /// applyDebugStringOffset - apply the relocation target to specific offset.
-  /// This is used to set the debug string offset.
-  void applyDebugStringOffset(Relocation& pReloc, uint32_t pOffset) {}
+  /// applyMergeStringOffset - apply the relocation target to specific offset.
+  /// This is used to set the relocation against merge string sections.
+  void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset) {}
 
  protected:
   /// addCopyReloc - add a copy relocation into .rela.dyn for pSym

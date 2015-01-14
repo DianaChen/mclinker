@@ -399,9 +399,9 @@ void AArch64Relocator::scanRelocation(Relocation& pReloc,
     issueUndefRef(pReloc, pSection, pInput);
 }
 
-uint32_t AArch64Relocator::getDebugStringOffset(Relocation& pReloc) const {
+uint32_t AArch64Relocator::getMergeStringOffset(Relocation& pReloc) const {
   if (pReloc.type() != llvm::ELF::R_AARCH64_ABS32)
-    error(diag::unsupport_reloc_for_debug_string)
+    error(diag::unsupport_reloc_for_merge_string)
         << getName(pReloc.type()) << "mclinker@googlegroups.com";
 
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
@@ -411,7 +411,7 @@ uint32_t AArch64Relocator::getDebugStringOffset(Relocation& pReloc) const {
                pReloc.target() + pReloc.addend();
 }
 
-void AArch64Relocator::applyDebugStringOffset(Relocation& pReloc,
+void AArch64Relocator::applyMergeStringOffset(Relocation& pReloc,
                                               uint32_t pOffset) {
   pReloc.target() = pOffset;
 }

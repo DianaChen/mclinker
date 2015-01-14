@@ -108,13 +108,13 @@ class Relocator {
     return true;
   }
 
-  /// getDebugStringOffset - get the offset from the relocation target. This is
-  /// used to get the debug string offset.
-  virtual uint32_t getDebugStringOffset(Relocation& pReloc) const = 0;
+  /// getMergeStringOffset - get the offset from the relocation target. This is
+  /// used to get the relocation target symbol offset.
+  virtual uint32_t getMergeStringOffset(Relocation& pReloc) const = 0;
 
-  /// applyDebugStringOffset - apply the relocation target to specific offset.
-  /// This is used to set the debug string offset.
-  virtual void applyDebugStringOffset(Relocation& pReloc, uint32_t pOffset) = 0;
+  /// applyMergeStringOffset - apply the relocation target to specific offset.
+  /// This is used to set the relocation against merge string sections.
+  virtual void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset) = 0;
 
  protected:
   const LinkerConfig& config() const { return m_Config; }
