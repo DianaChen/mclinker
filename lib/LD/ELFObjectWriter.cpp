@@ -65,7 +65,8 @@ void ELFObjectWriter::writeSection(Module& pModule,
     case LDFileFormat::Debug:
     case LDFileFormat::DebugString:
     case LDFileFormat::GCCExceptTable:
-    case LDFileFormat::EhFrame: {
+    case LDFileFormat::EhFrame:
+    case LDFileFormat::MetaData: {
       region = pOutput.request(section->offset(), section->size());
       if (region.size() == 0) {
         return;
@@ -75,7 +76,6 @@ void ELFObjectWriter::writeSection(Module& pModule,
     case LDFileFormat::Null:
     case LDFileFormat::NamePool:
     case LDFileFormat::BSS:
-    case LDFileFormat::MetaData:
     case LDFileFormat::Version:
     case LDFileFormat::EhFrameHdr:
     case LDFileFormat::StackNote:
@@ -94,6 +94,7 @@ void ELFObjectWriter::writeSection(Module& pModule,
     case LDFileFormat::DATA:
     case LDFileFormat::Debug:
     case LDFileFormat::Note:
+    case LDFileFormat::MetaData:
       emitSectionData(*section, region);
       break;
     case LDFileFormat::EhFrame:
