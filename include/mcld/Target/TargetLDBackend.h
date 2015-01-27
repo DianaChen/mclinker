@@ -185,6 +185,12 @@ class TargetLDBackend {
   /// units
   virtual bool isSymbolPreemptible(const ResolveInfo& pSym) const = 0;
 
+  /// isMergeStringSection - check if the sections contains mergeable strings
+  virtual bool isMergeStringSection(const LDSection& pSect) const = 0;
+
+  /// setMergeStringSection - set a section as a merge string section
+  virtual void setMergeStringSection(LDSection& pSect) = 0;
+
   /// mayHaveUnsafeFunctionPointerAccess - check if the section may have unsafe
   /// function pointer access
   virtual bool mayHaveUnsafeFunctionPointerAccess(

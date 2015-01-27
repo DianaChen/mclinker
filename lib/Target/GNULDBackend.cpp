@@ -2716,6 +2716,15 @@ bool GNULDBackend::isSymbolPreemptible(const ResolveInfo& pSym) const {
   return true;
 }
 
+bool GNULDBackend::isMergeStringSection(const LDSection& pSect) const {
+  return ((pSect.flag() & llvm::ELF::SHF_MERGE) &&
+          (pSect.flag() & llvm::ELF::SHF_STRINGS));
+}
+
+void GNULDBackend::setMergeStringSection(LDSection& pSect) {
+  pSect.setFlag(pSect.flag() | llvm::ELF::SHF_MERGE | llvm::ELF::SHF_STRINGS);
+}
+
 /// symbolNeedsDynRel - return whether the symbol needs a dynamic relocation
 bool GNULDBackend::symbolNeedsDynRel(const ResolveInfo& pSym,
                                      bool pSymHasPLT,

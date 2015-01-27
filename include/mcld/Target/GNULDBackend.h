@@ -295,6 +295,12 @@ class GNULDBackend : public TargetLDBackend {
   /// getEntry - get the entry point name
   llvm::StringRef getEntry(const Module& pModule) const;
 
+  /// isMergeStringSection - check if the sections contains mergeable strings
+  bool isMergeStringSection(const LDSection& pSect) const;
+
+  /// setMergeStringSection - set a section as a merge string section
+  void setMergeStringSection(LDSection& pSect);
+
   //  -----  relaxation  -----  //
   /// initBRIslandFactory - initialize the branch island factory for relaxation
   bool initBRIslandFactory();
