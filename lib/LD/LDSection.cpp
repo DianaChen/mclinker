@@ -104,4 +104,8 @@ bool LDSection::hasDebugString() const {
   return (NULL != m_Data.debug_string);
 }
 
+bool LDSection::hasMergeString() const {
+  return (NULL != m_Data.merge_string);
+}
+
 }  // namespace mcld

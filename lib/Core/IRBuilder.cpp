@@ -307,6 +307,19 @@ EhFrame* IRBuilder::CreateEhFrame(LDSection& pSection) {
   return eh_frame;
 }
 
+/// CreateMergeString - To create an MergeString for given pSection
+MergeString* IRBuilder::CreateMergeString(LDSection& pSection, bool pIsOutput) {
+  assert(!pSection.hasMergeString() && "pSection already has MergeString.");
+
+  MergeString* ms = NULL;
+  if (pIsOutput)
+    ms = MergeStringOutput::Create(pSection);
+  else
+    ms = MergeStringInput::Create(pSection);
+  pSection.setMergeString(ms);
+  return ms;
+}
+
 /// CreateDebugString - To create a DebugString for given pSection
 DebugString* IRBuilder::CreateDebugString(LDSection& pSection) {
   assert(!pSection.hasDebugString() && "pSection already has debug_str.");

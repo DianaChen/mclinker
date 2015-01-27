@@ -21,6 +21,7 @@ namespace mcld {
 
 class DebugString;
 class EhFrame;
+class MergeString;
 class RelocData;
 class SectionData;
 
@@ -162,6 +163,15 @@ class LDSection {
 
   bool hasDebugString() const;
 
+  // ------  MergeString  ------ //
+  const MergeString* getMergeString() const { return m_Data.merge_string; }
+  MergeString*       getMergeString()       { return m_Data.merge_string; }
+
+  void setMergeString(MergeString* pMergeString)
+  { m_Data.merge_string = pMergeString; }
+
+  bool hasMergeString() const;
+
   /// setLink - set the sections should link with.
   /// if pLink is NULL, no Link section is set.
   void setLink(LDSection* pLink) { m_pLink = pLink; }
@@ -176,6 +186,7 @@ class LDSection {
     RelocData*   reloc_data;
     EhFrame*     eh_frame;
     DebugString* debug_string;
+    MergeString* merge_string;
   };
 
  private:

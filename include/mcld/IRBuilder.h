@@ -22,6 +22,7 @@
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/LDSymbol.h"
+#include "mcld/LD/MergeString.h"
 #include "mcld/MC/Input.h"
 #include "mcld/MC/InputBuilder.h"
 #include "mcld/Support/FileHandle.h"
@@ -251,6 +252,16 @@ class IRBuilder {
   ///         or if the pSection's type is not LDFileFormat::EhFrame, then an
   ///         assertion occurs.
   static EhFrame* CreateEhFrame(LDSection& pSection);
+
+  /// CreateMergeString - To create an MergeString for given pSection
+  /// @param [in, out] pSection The given LDSection. It can be in either an
+  ///         input or the output.
+  ///         pSection.getMergeString() is set to a valid merge string section.
+  /// @ param isOutput - the pSection is output section or not
+  /// @return The created MergeString. If the pSection already has MergeString
+  ///         data, or if the pSection's type is not LDFileFormat::MergeString,
+  ///         then an assertion occurs.
+  static MergeString* CreateMergeString(LDSection& pSection, bool isOutput);
 
   /// CreateDebugString - To create a debug_str for given pSection
   /// @param  pSection The given LDSection. It should be the output
