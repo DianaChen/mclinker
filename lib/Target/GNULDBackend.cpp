@@ -1395,7 +1395,6 @@ unsigned int GNULDBackend::getSectionOrder(const LDSection& pSectHdr) const {
 
     case LDFileFormat::MetaData:
     case LDFileFormat::Debug:
-    case LDFileFormat::DebugString:
     default:
       return SHO_UNDEFINED;
   }
@@ -2319,7 +2318,6 @@ void GNULDBackend::placeOutputSections(Module& pModule) {
       case LDFileFormat::MetaData:
       case LDFileFormat::BSS:
       case LDFileFormat::Debug:
-      case LDFileFormat::DebugString:
       case LDFileFormat::GCCExceptTable:
       case LDFileFormat::Note:
       case LDFileFormat::NamePool:

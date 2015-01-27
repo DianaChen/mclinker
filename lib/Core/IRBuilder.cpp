@@ -10,7 +10,6 @@
 
 #include "mcld/Fragment/FragmentRef.h"
 #include "mcld/LinkerScript.h"
-#include "mcld/LD/DebugString.h"
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/ELFReader.h"
 #include "mcld/LD/LDContext.h"
@@ -41,8 +40,6 @@ LDFileFormat::Kind GetELFSectionKind(uint32_t pType,
   llvm::StringRef name(pName);
   if (name.startswith(".debug") || name.startswith(".zdebug") ||
       name.startswith(".line") || name.startswith(".stab")) {
-    if (name.startswith(".debug_str"))
-      return LDFileFormat::DebugString;
     return LDFileFormat::Debug;
   }
   if (name.startswith(".comment"))
@@ -318,15 +315,6 @@ MergeString* IRBuilder::CreateMergeString(LDSection& pSection, bool pIsOutput) {
     ms = MergeStringInput::Create(pSection);
   pSection.setMergeString(ms);
   return ms;
-}
-
-/// CreateDebugString - To create a DebugString for given pSection
-DebugString* IRBuilder::CreateDebugString(LDSection& pSection) {
-  assert(!pSection.hasDebugString() && "pSection already has debug_str.");
-
-  DebugString* debug_str = DebugString::Create(pSection);
-  pSection.setDebugString(debug_str);
-  return debug_str;
 }
 
 /// CreateBSS - To create a bss section for given pSection

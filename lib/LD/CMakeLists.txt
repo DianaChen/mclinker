@@ -5,7 +5,6 @@ add_llvm_library(MCLDLD
   BranchIsland.cpp
   BranchIslandFactory.cpp
   BSDArchiveReader.cpp
-  DebugString.cpp
   Diagnostic.cpp
   DiagnosticEngine.cpp
   DiagnosticInfos.cpp
@@ -38,7 +37,6 @@ add_llvm_library(MCLDLD
   LDSymbol.cpp
   MergeString.cpp
   MergeStringReader.cpp
-  MergedStringTable.cpp
   MsgHandler.cpp
   NamePool.cpp
   ObjectWriter.cpp

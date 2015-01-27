@@ -99,11 +99,6 @@ bool LDSection::hasEhFrame() const {
   return (m_Data.eh_frame != NULL);
 }
 
-bool LDSection::hasDebugString() const {
-  assert(LDFileFormat::DebugString == kind());
-  return (NULL != m_Data.debug_string);
-}
-
 bool LDSection::hasMergeString() const {
   return (NULL != m_Data.merge_string);
 }

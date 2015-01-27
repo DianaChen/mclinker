@@ -18,7 +18,6 @@
 #include "mcld/LD/ArchiveReader.h"
 #include "mcld/LD/BinaryReader.h"
 #include "mcld/LD/BranchIslandFactory.h"
-#include "mcld/LD/DebugString.h"
 #include "mcld/LD/DynObjReader.h"
 #include "mcld/LD/GarbageCollection.h"
 #include "mcld/LD/GroupReader.h"
@@ -379,12 +378,6 @@ bool ObjectLinker::mergeSections() {
           }
           break;
         }
-        case LDFileFormat::DebugString: {
-          // FIXME: disable debug string merge when doing partial link.
-          if (LinkerConfig::Object == m_Config.codeGenType())
-            (*sect)->setKind(LDFileFormat::Debug);
-        }
-        // Fall through
         default: {
           if (!(*sect)->hasSectionData())
             continue;  // skip
@@ -455,13 +448,6 @@ void ObjectLinker::addSymbolToOutput(ResolveInfo& pInfo, Module& pModule) {
   // shrad/executable objects, so it's fine to do so.
   if (pInfo.outSymbol()->hasFragRef() &&
       (LDFileFormat::Ignore ==
-           pInfo.outSymbol()
-               ->fragRef()
-               ->frag()
-               ->getParent()
-               ->getSection()
-               .kind() ||
-       LDFileFormat::DebugString ==
            pInfo.outSymbol()
                ->fragRef()
                ->frag()
@@ -677,16 +663,6 @@ bool ObjectLinker::prelayout() {
     eh_frame_sect->getEhFrame()->computeOffsetSize();
   m_LDBackend.createAndSizeEhFrameHdr(*m_pModule);
 
-  // size debug string table and set up the debug string offset
-  // we set the .debug_str size here so that there won't be a section symbol for
-  // .debug_str. While actually it doesn't matter that .debug_str has section
-  // symbol or not.
-  // FIXME: disable debug string merge when doing partial link.
-  if (LinkerConfig::Object != m_Config.codeGenType()) {
-    LDSection* debug_str_sect = m_pModule->getSection(".debug_str");
-    if (debug_str_sect && debug_str_sect->hasDebugString())
-      debug_str_sect->getDebugString()->computeOffsetSize();
-  }
   return true;
 }
 
@@ -781,8 +757,6 @@ bool ObjectLinker::relocation() {
   if (LinkerConfig::Object == m_Config.codeGenType())
     return true;
 
-  LDSection* debug_str_sect = m_pModule->getSection(".debug_str");
-
   // apply all relocations of all inputs
   Module::obj_iterator input, inEnd = m_pModule->obj_end();
   for (input = m_pModule->obj_begin(); input != inEnd; ++input) {
@@ -806,19 +780,6 @@ bool ObjectLinker::relocation() {
             ResolveInfo::Section == info->type() &&
             ResolveInfo::Undefined == info->desc())
           continue;
-
-        // apply the relocation aginst symbol on DebugString
-        if (info->outSymbol()->hasFragRef() &&
-            info->outSymbol()->fragRef()->frag()->getKind()
-                == Fragment::Region &&
-            info->outSymbol()->fragRef()->frag()->getParent()->getSection()
-                .kind() == LDFileFormat::DebugString) {
-          assert(debug_str_sect != NULL);
-          assert(debug_str_sect->hasDebugString());
-          debug_str_sect->getDebugString()->applyOffset(*relocation,
-                                                        m_LDBackend);
-          continue;
-        }
 
         relocation->apply(*m_LDBackend.getRelocator());
       }  // for all relocations

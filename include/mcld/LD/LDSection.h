@@ -19,7 +19,6 @@
 
 namespace mcld {
 
-class DebugString;
 class EhFrame;
 class MergeString;
 class RelocData;
@@ -154,15 +153,6 @@ class LDSection {
 
   bool hasEhFrame() const;
 
-  // ------  DebugString  ------ //
-  const DebugString* getDebugString() const { return m_Data.debug_string; }
-  DebugString*       getDebugString()       { return m_Data.debug_string; }
-
-  void setDebugString(DebugString* pDebugString)
-  { m_Data.debug_string = pDebugString; }
-
-  bool hasDebugString() const;
-
   // ------  MergeString  ------ //
   const MergeString* getMergeString() const { return m_Data.merge_string; }
   MergeString*       getMergeString()       { return m_Data.merge_string; }
@@ -185,7 +175,6 @@ class LDSection {
     SectionData* sect_data;
     RelocData*   reloc_data;
     EhFrame*     eh_frame;
-    DebugString* debug_string;
     MergeString* merge_string;
   };
 

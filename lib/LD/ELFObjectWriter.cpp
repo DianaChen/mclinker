@@ -17,7 +17,6 @@
 #include "mcld/Fragment/NullFragment.h"
 #include "mcld/Fragment/RegionFragment.h"
 #include "mcld/Fragment/Stub.h"
-#include "mcld/LD/DebugString.h"
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/ELFFileFormat.h"
 #include "mcld/LD/ELFSegment.h"
@@ -63,7 +62,6 @@ void ELFObjectWriter::writeSection(Module& pModule,
     case LDFileFormat::Relocation:
     case LDFileFormat::Target:
     case LDFileFormat::Debug:
-    case LDFileFormat::DebugString:
     case LDFileFormat::GCCExceptTable:
     case LDFileFormat::EhFrame:
     case LDFileFormat::MetaData: {
@@ -108,9 +106,6 @@ void ELFObjectWriter::writeSection(Module& pModule,
       break;
     case LDFileFormat::Target:
       target().emitSectionData(*section, region);
-      break;
-    case LDFileFormat::DebugString:
-      section->getDebugString()->emit(region);
       break;
     default:
       llvm_unreachable("invalid section kind");

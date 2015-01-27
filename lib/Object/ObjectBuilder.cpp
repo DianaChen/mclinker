@@ -14,7 +14,6 @@
 #include "mcld/Fragment/AlignFragment.h"
 #include "mcld/Fragment/FillFragment.h"
 #include "mcld/Fragment/NullFragment.h"
-#include "mcld/LD/DebugString.h"
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/SectionData.h"
@@ -84,17 +83,6 @@ LDSection* ObjectBuilder::MergeSection(const Input& pInputFile,
         eh_frame = IRBuilder::CreateEhFrame(*target);
 
       eh_frame->merge(pInputFile, *pInputSection.getEhFrame());
-      UpdateSectionAlign(*target, pInputSection);
-      return target;
-    }
-    case LDFileFormat::DebugString: {
-      DebugString* debug_str = NULL;
-      if (target->hasDebugString())
-        debug_str = target->getDebugString();
-      else
-        debug_str = IRBuilder::CreateDebugString(*target);
-
-      debug_str->merge(pInputSection);
       UpdateSectionAlign(*target, pInputSection);
       return target;
     }
