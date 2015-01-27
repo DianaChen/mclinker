@@ -491,7 +491,8 @@ TEST_F(LinkerTest, plasma_object) {
   /// Relocations
   /// Offset     Info    Type            Sym.Value  Sym. Name
   /// 00000004  0000071b R_ARM_PLT32       00000000   _Z1gv
-  builder.AddRelocation(*rel_text, llvm::ELF::R_ARM_PLT32, *z1gv, 0x4);
+  builder.AddRelocation(*rel_text, *text_data, llvm::ELF::R_ARM_PLT32, *z1gv,
+                        0x4);
 
   if (linker.link(module, builder)) {
     linker.emit(module, "libgotplt.so");  ///< -o libgotplt.so

@@ -139,6 +139,15 @@ bool ELFReader<32, true>::readSymbols(Input& pInput,
       ld_name = std::string(pStrTab + st_name);
     }
 
+    SectionData* target_data = NULL;
+    if (section != NULL) {
+      if (section->kind() == LDFileFormat::EhFrame)
+        target_data = section->getEhFrame()->getSectionData();
+      else if (m_Backend.isMergeStringSection(*section))
+        target_data = &section->getMergeString()->getSectionData();
+      else
+        target_data = section->getSectionData();
+    }
     LDSymbol* psym = pBuilder.AddSymbol(pInput,
                                         ld_name,
                                         ld_type,
@@ -147,6 +156,7 @@ bool ELFReader<32, true>::readSymbols(Input& pInput,
                                         st_size,
                                         ld_value,
                                         section,
+                                        target_data,
                                         ld_vis);
 
     if (is_dyn_obj && psym != NULL && ResolveInfo::Undefined != ld_desc &&
@@ -224,7 +234,17 @@ bool ELFReader<32, true>::readRela(Input& pInput,
       fatal(diag::err_cannot_read_symbol) << r_sym << pInput.path();
     }
 
-    IRBuilder::AddRelocation(pSection, r_type, *symbol, r_offset, r_addend);
+    // get the relocation target SectionData
+    SectionData* target_data = NULL;
+    if (pSection.getLink()->kind() == LDFileFormat::EhFrame)
+      target_data = pSection.getLink()->getEhFrame()->getSectionData();
+    else if (m_Backend.isMergeStringSection(*pSection.getLink()))
+      target_data = &pSection.getLink()->getMergeString()->getSectionData();
+    else
+      target_data = pSection.getLink()->getSectionData();
+
+    IRBuilder::AddRelocation(pSection, *target_data, r_type, *symbol, r_offset,
+                             r_addend);
   }  // end of for
   return true;
 }
@@ -251,7 +271,16 @@ bool ELFReader<32, true>::readRel(Input& pInput,
       fatal(diag::err_cannot_read_symbol) << r_sym << pInput.path();
     }
 
-    IRBuilder::AddRelocation(pSection, r_type, *symbol, r_offset);
+    // get the relocation target SectionData
+    SectionData* target_data = NULL;
+    if (pSection.getLink()->kind() == LDFileFormat::EhFrame)
+      target_data = pSection.getLink()->getEhFrame()->getSectionData();
+    else if (m_Backend.isMergeStringSection(*pSection.getLink()))
+      target_data = &pSection.getLink()->getMergeString()->getSectionData();
+    else
+      target_data = pSection.getLink()->getSectionData();
+
+    IRBuilder::AddRelocation(pSection, *target_data, r_type, *symbol, r_offset);
   }  // end of for
   return true;
 }
@@ -639,6 +668,16 @@ bool ELFReader<64, true>::readSymbols(Input& pInput,
       ld_name = std::string(pStrTab + st_name);
     }
 
+    SectionData* target_data = NULL;
+    if (section != NULL) {
+      if (section->kind() == LDFileFormat::EhFrame)
+        target_data = section->getEhFrame()->getSectionData();
+      else if (m_Backend.isMergeStringSection(*section))
+        target_data = &section->getMergeString()->getSectionData();
+      else
+        target_data = section->getSectionData();
+    }
+
     LDSymbol* psym = pBuilder.AddSymbol(pInput,
                                         ld_name,
                                         ld_type,
@@ -647,6 +686,7 @@ bool ELFReader<64, true>::readSymbols(Input& pInput,
                                         st_size,
                                         ld_value,
                                         section,
+                                        target_data,
                                         ld_vis);
 
     if (is_dyn_obj && psym != NULL && ResolveInfo::Undefined != ld_desc &&
@@ -719,7 +759,17 @@ bool ELFReader<64, true>::readRela(Input& pInput,
       fatal(diag::err_cannot_read_symbol) << r_sym << pInput.path();
     }
 
-    IRBuilder::AddRelocation(pSection, r_type, *symbol, r_offset, r_addend);
+    // get the relocation target SectionData
+    SectionData* target_data = NULL;
+    if (pSection.getLink()->kind() == LDFileFormat::EhFrame)
+      target_data = pSection.getLink()->getEhFrame()->getSectionData();
+    else if (m_Backend.isMergeStringSection(*pSection.getLink()))
+      target_data = &pSection.getLink()->getMergeString()->getSectionData();
+    else
+      target_data = pSection.getLink()->getSectionData();
+
+    IRBuilder::AddRelocation(pSection, *target_data, r_type, *symbol, r_offset,
+                             r_addend);
   }  // end of for
   return true;
 }
@@ -745,7 +795,16 @@ bool ELFReader<64, true>::readRel(Input& pInput,
       fatal(diag::err_cannot_read_symbol) << r_sym << pInput.path();
     }
 
-    IRBuilder::AddRelocation(pSection, r_type, *symbol, r_offset);
+    // get the relocation target SectionData
+    SectionData* target_data = NULL;
+    if (pSection.getLink()->kind() == LDFileFormat::EhFrame)
+      target_data = pSection.getLink()->getEhFrame()->getSectionData();
+    else if (m_Backend.isMergeStringSection(*pSection.getLink()))
+      target_data = &pSection.getLink()->getMergeString()->getSectionData();
+    else
+      target_data = pSection.getLink()->getSectionData();
+
+    IRBuilder::AddRelocation(pSection, *target_data, r_type, *symbol, r_offset);
   }  // end of for
   return true;
 }

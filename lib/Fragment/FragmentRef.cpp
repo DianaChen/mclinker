@@ -73,26 +73,11 @@ FragmentRef* FragmentRef::Create(Fragment& pFrag, uint64_t pOffset) {
   return result;
 }
 
-FragmentRef* FragmentRef::Create(LDSection& pSection, uint64_t pOffset) {
-  SectionData* data = NULL;
-  switch (pSection.kind()) {
-    case LDFileFormat::Relocation:
-      // No fragment reference refers to a relocation section
-      break;
-    case LDFileFormat::EhFrame:
-      if (pSection.hasEhFrame())
-        data = pSection.getEhFrame()->getSectionData();
-      break;
-    default:
-      data = pSection.getSectionData();
-      break;
-  }
-
-  if (data == NULL || data->empty()) {
+FragmentRef* FragmentRef::Create(SectionData* pSectionData, uint64_t pOffset) {
+  if (pSectionData == NULL || pSectionData->empty())
     return Null();
-  }
 
-  return Create(data->front(), pOffset);
+  return Create(pSectionData->front(), pOffset);
 }
 
 void FragmentRef::Clear() {

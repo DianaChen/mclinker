@@ -116,7 +116,14 @@ FragmentRef* ELFReaderIF::getSymFragmentRef(Input& pInput,
   if (sect_hdr->kind() == LDFileFormat::Group)
     return FragmentRef::Null();
 
-  return FragmentRef::Create(*sect_hdr, pOffset);
+  SectionData* target_data = NULL;
+  if (sect_hdr->kind() == LDFileFormat::EhFrame)
+    target_data = sect_hdr->getEhFrame()->getSectionData();
+  else if (m_Backend.isMergeStringSection(*sect_hdr->getLink()))
+    target_data = &sect_hdr->getMergeString()->getSectionData();
+  else
+    target_data = sect_hdr->getSectionData();
+  return FragmentRef::Create(target_data, pOffset);
 }
 
 /// getSymVisibility

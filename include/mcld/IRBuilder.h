@@ -380,6 +380,7 @@ class IRBuilder {
   ///                           offset.
   /// @param [in]      pSection Absolute, undefined, common symbols do not have
   ///                           pSection. Keep their pSection be NULL.
+  /// @param [in]      pSectionData SectionData of pSection
   /// @oaram [in]      pVis     The visibility of the symbol
   ///
   /// @return The added symbol. If the insertion fails due to the resoluction,
@@ -392,6 +393,7 @@ class IRBuilder {
                       ResolveInfo::SizeType pSize,
                       LDSymbol::ValueType pValue = 0x0,
                       LDSection* pSection = NULL,
+                      SectionData* pSectionData = NULL,
                       ResolveInfo::Visibility pVis = ResolveInfo::Default);
 
   /// AddSymbol - To add a symbol in mcld::Module
@@ -442,14 +444,15 @@ class IRBuilder {
 
   /// AddRelocation - To add a relocation entry
   ///
-  /// @param [in] pSection The relocation section. pSection's link should point
-  /// to
-  ///                      the target section.
-  /// @param [in] pType    The type of the relocation (target dependent)
-  /// @param [in] pSym     The symbol should be the symbol in the input file.
-  /// @param [in] pOffset  The offset of target section.
-  /// @param [in] pAddend  Tthe addend value for applying relocation
+  /// @param [in] pSection    The relocation section. pSection's link should
+  ///                         point to the target section
+  /// @param [in] pTargetData SectionData of the relocation target section
+  /// @param [in] pType       The type of the relocation (target dependent)
+  /// @param [in] pSym        The symbol should be the symbol in the input file
+  /// @param [in] pOffset     The offset of target section
+  /// @param [in] pAddend     The addend value for applying relocation
   static Relocation* AddRelocation(LDSection& pSection,
+                                   SectionData& pTargetData,
                                    Relocation::Type pType,
                                    LDSymbol& pSym,
                                    uint32_t pOffset,

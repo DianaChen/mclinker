@@ -635,6 +635,7 @@ bool ObjectLinker::prelayout() {
     m_pModule->getSectionSymbolSet().finalize(
         **sect,
         m_pModule->getSymbolTable(),
+        m_LDBackend,
         m_Config.codeGenType() == LinkerConfig::Object);
   }
 

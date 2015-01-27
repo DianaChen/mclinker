@@ -19,6 +19,7 @@ namespace mcld {
 class Fragment;
 class LDSection;
 class Layout;
+class SectionData;
 
 /** \class FragmentRef
  *  \brief FragmentRef is a reference of a Fragment's contetnt.
@@ -40,7 +41,14 @@ class FragmentRef {
   /// return NULL.
   static FragmentRef* Create(Fragment& pFrag, uint64_t pOffset);
 
-  static FragmentRef* Create(LDSection& pSection, uint64_t pOffset);
+  /// Create - create a fragment reference for according to given SectionData
+  /// and offset
+  /// @param pSectionData - the SectionData contains the desired fragment
+  /// @param pOffset - the section offset which starts from the first fragment
+  /// in pSectionData
+  /// @return if the offset is legal, return the fragment reference. Otherwise,
+  /// return NULL.
+  static FragmentRef* Create(SectionData* pSectionData, uint64_t pOffset);
 
   /// Clear - clear all generated FragmentRef in the system.
   static void Clear();

@@ -403,6 +403,7 @@ LDSymbol* IRBuilder::AddSymbol(Input& pInput,
                                ResolveInfo::SizeType pSize,
                                LDSymbol::ValueType pValue,
                                LDSection* pSection,
+                               SectionData* pSectionData,
                                ResolveInfo::Visibility pVis) {
   // rename symbols
   std::string name = pName;
@@ -433,7 +434,7 @@ LDSymbol* IRBuilder::AddSymbol(Input& pInput,
           LDFileFormat::Group == pSection->kind())
         frag = FragmentRef::Null();
       else
-        frag = FragmentRef::Create(*pSection, pValue);
+        frag = FragmentRef::Create(pSectionData, pValue);
 
       LDSymbol* input_sym = addSymbolFromObject(
           name, pType, pDesc, pBind, pSize, pValue, frag, pVis);
@@ -588,11 +589,12 @@ LDSymbol* IRBuilder::addSymbolFromDynObj(Input& pInput,
 ///
 /// All symbols should be read and resolved before calling this function.
 Relocation* IRBuilder::AddRelocation(LDSection& pSection,
+                                     SectionData& pTargetData,
                                      Relocation::Type pType,
                                      LDSymbol& pSym,
                                      uint32_t pOffset,
                                      Relocation::Address pAddend) {
-  FragmentRef* frag_ref = FragmentRef::Create(*pSection.getLink(), pOffset);
+  FragmentRef* frag_ref = FragmentRef::Create(&pTargetData, pOffset);
 
   Relocation* relocation = Relocation::Create(pType, *frag_ref, pAddend);
 

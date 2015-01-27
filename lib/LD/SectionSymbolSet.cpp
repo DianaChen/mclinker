@@ -13,11 +13,14 @@
 #include "mcld/LD/LDFileFormat.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/LDSymbol.h"
+#include "mcld/LD/MergeString.h"
 #include "mcld/LD/NamePool.h"
 #include "mcld/LD/RelocData.h"
 #include "mcld/LD/ResolveInfo.h"
 #include "mcld/LD/SectionData.h"
+#include "mcld/Target/TargetLDBackend.h"
 
+#include <llvm/Support/Casting.h>
 namespace mcld {
 
 //===----------------------------------------------------------------------===//
@@ -60,6 +63,7 @@ bool SectionSymbolSet::add(LDSection& pOutSect, NamePool& pNamePool) {
 
 bool SectionSymbolSet::finalize(LDSection& pOutSect,
                                 SymbolTable& pSymTab,
+                                const TargetLDBackend& pBackend,
                                 bool relocatable) {
   if (!relocatable && pOutSect.size() == 0)
     return true;
@@ -78,12 +82,16 @@ bool SectionSymbolSet::finalize(LDSection& pOutSect,
       break;
 
     default:
-      data = pOutSect.getSectionData();
+      if (pBackend.isMergeStringSection(pOutSect) && pOutSect.hasMergeString())
+        data = &pOutSect.getMergeString()->getSectionData();
+      else
+        data = pOutSect.getSectionData();
       break;
   }
   FragmentRef* frag_ref;
-  if (data && !data->empty())
+  if (data && !data->empty()) {
     frag_ref = FragmentRef::Create(data->front(), 0x0);
+  }
   else
     frag_ref = FragmentRef::Null();
   sym->setFragmentRef(frag_ref);

@@ -16,8 +16,9 @@
 namespace mcld {
 
 class LDSection;
-class NamePool;
 class LDSymbol;
+class NamePool;
+class TargetLDBackend;
 
 /** \class SectionSymbolSet
  *  \brief SectionSymbolSet contains the section symbols defined by linker for
@@ -37,7 +38,10 @@ class SectionSymbolSet {
 
   /// finalize - set section symbols' fragmentRef and push it into the output
   /// symbol table
-  bool finalize(LDSection& pOutSect, SymbolTable& pSymTab, bool relocatable);
+  bool finalize(LDSection& pOutSect,
+                SymbolTable& pSymTab,
+                const TargetLDBackend& pBackend,
+                bool relocatable);
 
   /// get - get the section symbol for section pOutpSect
   LDSymbol* get(const LDSection& pOutSect);
