@@ -53,6 +53,7 @@ bool MergeStringReader::read<32, true>(Input& pInput,
     size_t len = string_length(str);
     pMergeString.addString(llvm::StringRef(str, len), frag_off);
     frag_off += len;
+    str += len;
   }
   return true;
 }

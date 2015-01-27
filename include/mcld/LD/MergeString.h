@@ -141,12 +141,12 @@ class MergeStringOutput : public MergeString {
   bool isOutput() const { return true; }
 
  private:
-  struct EntryEqual {
+  struct EntryCompare {
     bool operator() (const Entry* pX, const Entry* pY) const
-    { return pX->getRegion().equals(pY->getRegion()); }
+    { return pX->getRegion().compare(pY->getRegion()); }
   };
 
-  typedef std::set<Entry*, EntryEqual> StringPoolTy;
+  typedef std::set<Entry*, EntryCompare> StringPoolTy;
 
  private:
   // string_pool - unique string pool to store all strings
