@@ -15,6 +15,7 @@ namespace mcld {
 
 class Input;
 class IRBuilder;
+class MergeString;
 class Module;
 class TargetLDBackend;
 
@@ -37,8 +38,13 @@ class Relocator {
 
   virtual ~Relocator() = 0;
 
-  /// apply - general apply function
+  /// applyRelocation - general apply function
   virtual Result applyRelocation(Relocation& pRelocation) = 0;
+
+  /// applyRelocationForMergeString - apply the relocation against the symbol
+  /// define on merge string section
+  virtual Result applyRelocationForMergeString(Relocation& pRelocation,
+                                               MergeString& pTargetSection);
 
   /// scanRelocation - When read in relocations, backend can do any modification
   /// to relocation and generate empty entries, such as GOT, dynamic relocation

@@ -13,6 +13,7 @@
 #include "mcld/LD/LDContext.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/LDSymbol.h"
+#include "mcld/LD/MergeString.h"
 #include "mcld/LD/ResolveInfo.h"
 #include "mcld/LD/SectionData.h"
 #include "mcld/Support/Demangle.h"
@@ -94,6 +95,25 @@ void Relocator::issueUndefRef(Relocation& pReloc,
 
   fatal(diag::undefined_reference_text) << reloc_sym << pInput.path()
                                         << caller_file_name << caller_func_name;
+}
+
+Relocator::Result
+Relocator::applyRelocationForMergeString(Relocation& pRelocation,
+                                         MergeString& pTargetSection) {
+  ResolveInfo* sym_info = pRelocation.symInfo();
+  uint64_t off = 0x0u;
+  if (sym_info->type() == ResolveInfo::Section) {
+    // the section symbol should be the input section symbol
+    assert(!pTargetSection.isOutput());
+    // get the output offset according to the input offset
+    pTargetSection.getOutputOffset(getMergeStringOffset(pRelocation));
+  } else {
+    assert(sym_info->outSymbol()->hasFragRef());
+    assert(sym_info->outSymbol()->fragRef()->offset() == 0x0u);
+    pTargetSection.getOutputOffset(*sym_info->outSymbol()->fragRef()->frag());
+  }
+  applyMergeStringOffset(pRelocation, off);
+  return OK;
 }
 
 }  // namespace mcld
