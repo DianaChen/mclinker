@@ -102,15 +102,16 @@ Relocator::applyRelocationForMergeString(Relocation& pRelocation,
                                          MergeString& pTargetSection) {
   ResolveInfo* sym_info = pRelocation.symInfo();
   uint64_t off = 0x0u;
+  assert(sym_info->outSymbol()->hasFragRef());
+  assert(sym_info->outSymbol()->fragRef()->offset() == 0x0u);
   if (sym_info->type() == ResolveInfo::Section) {
-    // the section symbol should be the input section symbol
-    assert(!pTargetSection.isOutput());
-    // get the output offset according to the input offset
-    pTargetSection.getOutputOffset(getMergeStringOffset(pRelocation));
+    // offset of the relocation against section symbol should be acquired
+    // accordings to input offset
+    off = pTargetSection.getOutputOffset(getMergeStringOffset(pRelocation),
+              *sym_info->outSymbol()->fragRef()->frag());
   } else {
-    assert(sym_info->outSymbol()->hasFragRef());
-    assert(sym_info->outSymbol()->fragRef()->offset() == 0x0u);
-    pTargetSection.getOutputOffset(*sym_info->outSymbol()->fragRef()->frag());
+    off = pTargetSection.getOutputOffset(
+              *sym_info->outSymbol()->fragRef()->frag());
   }
   applyMergeStringOffset(pRelocation, off);
   return OK;

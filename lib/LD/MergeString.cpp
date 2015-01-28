@@ -36,6 +36,11 @@ uint64_t MergeString::getOutputOffset(const Fragment& pFrag) const {
   return entry.getOutputEntry().getOffset();
 }
 
+uint64_t MergeString::getOutputOffset(uint64_t pInputOffset,
+                                      const Fragment& pFrag) const {
+  return doGetOutputOffset(pInputOffset, pFrag);
+}
+
 Fragment& MergeString::getOutputFragment(Fragment& pFrag) {
   return llvm::cast<Entry>(pFrag).getOutputEntry();
 }
@@ -70,6 +75,10 @@ void MergeStringOutput::clearStringPool() {
 
 MergeString& MergeStringOutput::merge(MergeString& pOther) {
   assert(!pOther.isOutput());
+  // Map the first fragment to the input MergeString
+  if (!pOther.getSectionData().empty())
+    m_FragSectMap[&pOther.getSectionData().front()] = &pOther;
+
   // traverse the strings in pOther
   uint64_t offset = m_pSection->size();
   SectionData::iterator it = pOther.getSectionData().begin();
@@ -100,6 +109,13 @@ MergeString& MergeStringOutput::merge(MergeString& pOther) {
   return *this;
 }
 
+uint64_t MergeStringOutput::doGetOutputOffset(uint64_t pInputOffset,
+                                              const Fragment& pFrag) const {
+  // get the input MergeString
+  assert(m_FragSectMap.find(&pFrag) != m_FragSectMap.end());
+  return m_FragSectMap.at(&pFrag)->getOutputOffset(pInputOffset, pFrag);
+}
+
 //===----------------------------------------------------------------------===//
 // MergeStringInput
 //===----------------------------------------------------------------------===//
@@ -128,7 +144,8 @@ void MergeStringInput::addString(llvm::StringRef pString,
   m_InOffsetMap[pInputOffset] = entry;
 }
 
-uint64_t MergeStringInput::getOutputOffset(uint64_t pInputOffset) const {
+uint64_t MergeStringInput::doGetOutputOffset(uint64_t pInputOffset,
+                                             const Fragment& pFrag) const {
   assert(m_InOffsetMap.find(pInputOffset) != m_InOffsetMap.end());
   return m_InOffsetMap.at(pInputOffset)->getOutputEntry().getOffset();
 }

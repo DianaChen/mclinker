@@ -42,8 +42,14 @@ class MergeString {
   const SectionData& getSectionData() const { return *m_pSectionData; }
   SectionData& getSectionData() { return *m_pSectionData; }
 
-  /// getOutputOffset - get the output offset of the given RegionFragment
+  /// getOutputOffset - get the output offset of the given Fragment, pFrag
   uint64_t getOutputOffset(const Fragment& pFrag) const;
+
+  /// getOutputOffset - get the output offset from the specfied input offset
+  /// pInputOffset of pFrag. Here pFrag should be the first fragment when it's
+  /// in the input section
+  uint64_t getOutputOffset(uint64_t pInputOffset,
+                           const Fragment& pFrag) const;
 
   /// getOutputFragment - get the output fragment of the given merge string
   /// fragment
@@ -51,12 +57,6 @@ class MergeString {
 
   const Fragment& getOutputFragment(const Fragment& pFrag) const;
 
-  /// getOutputOffset - get the output offset from the specfied input offset
-  /// pInputOffset
-  virtual uint64_t getOutputOffset(uint64_t pInputOffset) const {
-    assert(false);
-    return 0;
-  }
 
   virtual void addString(llvm::StringRef pString, uint64_t pInputOffset) {
     assert(false);
@@ -94,6 +94,9 @@ class MergeString {
   };
 
  protected:
+  virtual uint64_t doGetOutputOffset(uint64_t pInputOffset,
+                                     const Fragment& pFrag) const = 0;
+ protected:
   LDSection* m_pSection;
   SectionData* m_pSectionData;
 
@@ -123,13 +126,9 @@ class MergeStringOutput : public MergeString {
   /// save memory
   void clearStringPool();
 
-  /// getOutputOffset - get the output offset from the given input offset. The
-  /// given input offset should associate to the input merge string section.
-  /// This function should not be called for an output merge string section.
-  uint64_t getOutputOffset(uint64_t pInputOffset) const {
-      assert(false);
-      return 0;
-  }
+  /// getOutputOffset - get the output offset from the given input offset
+  uint64_t doGetOutputOffset(uint64_t pInputOffset,
+                             const Fragment& pFrag) const;
 
   void addString(llvm::StringRef pString, uint64_t pInputOffset) {
     assert(false);
@@ -147,10 +146,16 @@ class MergeStringOutput : public MergeString {
   };
 
   typedef std::set<Entry*, EntryCompare> StringPoolTy;
+  typedef std::map<const Fragment*, const MergeString*> FragSectionMapTy;
 
  private:
-  // string_pool - unique string pool to store all strings
+  // m_StringPool - unique string pool to store all strings
   StringPoolTy m_StringPool;
+
+  // m_FragSectMap - map the first fragment of an input section to its intput
+  // MergeString. In case that the fragment has been moved to output and we're
+  // not able to get its output offset according to the input offset
+  FragSectionMapTy m_FragSectMap;
 };
 
 /** \class MergeStrigInput
@@ -174,9 +179,8 @@ class MergeStringInput : public MergeString {
   // addString - create an Entry for pString and add it to this section
   void addString(llvm::StringRef pString, uint64_t pInputOffset);
 
-  /// getOutputOffset - get the output offset frome the given input offset. The
-  /// given input offset should associate to this input merge string section.
-  uint64_t getOutputOffset(uint64_t pInputOffset) const;
+  uint64_t doGetOutputOffset(uint64_t pInputOffset,
+                             const Fragment& pFrag) const;
 
   bool isOutput() const { return false; }
 
