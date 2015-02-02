@@ -116,6 +116,20 @@ void ObjectBuilder::MergeEhFrame(const Input& pInputFile,
   UpdateSectionAlign(pOutputSection, pInputSection);
 }
 
+/// MergeMSSection - merge the pInputSection to output one. pInputSection is the
+/// section contains merge strings
+void ObjectBuilder::MergeMergeString(LDSection& pOutputSection,
+                                     LDSection& pInputSection) {
+  MergeString* ms = NULL;
+  if (pOutputSection.hasMergeString())
+    ms = pOutputSection.getMergeString();
+  else
+    ms = IRBuilder::CreateMergeString(pOutputSection, true);
+
+  ms->merge(*pInputSection.getMergeString());
+  UpdateSectionAlign(pOutputSection, pInputSection);
+}
+
 /// MoveSectionData - move the fragments of pTO section data to pTo
 bool ObjectBuilder::MoveSectionData(SectionData& pFrom, SectionData& pTo) {
   assert(&pFrom != &pTo && "Cannot move section data to itself!");

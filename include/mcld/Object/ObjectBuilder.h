@@ -92,6 +92,11 @@ class ObjectBuilder {
                     LDSection& pOutputSection,
                     LDSection& pInputSection);
 
+  /// MergeMSSection - merge the pInputSection to pOutputSection.
+  /// pInputSection and pOutputSection are the sections containing merge strings
+  void MergeMergeString(LDSection& pOutputSection,
+                        LDSection& pInputSection);
+
   /// MoveSectionData - move the fragment of pFrom to pTo section data.
   static bool MoveSectionData(SectionData& pFrom, SectionData& pTo);
 
