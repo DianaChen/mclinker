@@ -16,6 +16,7 @@
 namespace mcld {
 
 class Input;
+class LDSection;
 class Module;
 
 /** \class ObjectReader
@@ -38,6 +39,14 @@ class ObjectReader : public LDReader {
   virtual bool readSymbols(Input& pFile) = 0;
 
   virtual bool readSections(Input& pFile) = 0;
+
+  /// readMergeStrings - read pStrings as merge strings
+  ///
+  /// We may need to read the merge strings during MergeSections. In this
+  /// function, pStrings is read as several fragments containing only one string
+  /// each. Then put these fragments into pSection.
+  virtual bool readMergeStrings(llvm::StringRef pStrings,
+                                LDSection& pSection) = 0;
 
   /// readRelocations - read relocation sections
   ///

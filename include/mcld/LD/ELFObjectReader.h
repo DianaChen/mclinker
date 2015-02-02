@@ -18,6 +18,7 @@ class EhFrameReader;
 class ELFReaderIF;
 class Input;
 class IRBuilder;
+class MergeStringReader;
 class GNULDBackend;
 class LinkerConfig;
 
@@ -50,6 +51,14 @@ class ELFObjectReader : public ObjectReader {
 
   virtual bool readSymbols(Input& pFile);
 
+  /// readMergeStrings - read pStrings as merge strings
+  ///
+  /// We may need to read the merge strings during MergeSections. In this
+  /// function, pStrings is read as several fragments containing only one string
+  /// each. Then put these fragments into pSection.
+  virtual bool readMergeStrings(llvm::StringRef pStrings,
+                                LDSection& pSection);
+
   /// readRelocations - read relocation sections
   ///
   /// This function should be called after symbol resolution.
@@ -58,6 +67,7 @@ class ELFObjectReader : public ObjectReader {
  private:
   ELFReaderIF* m_pELFReader;
   EhFrameReader* m_pEhFrameReader;
+  MergeStringReader* m_pMergeStringReader;
   IRBuilder& m_Builder;
   ReadFlag m_ReadFlag;
   GNULDBackend& m_Backend;

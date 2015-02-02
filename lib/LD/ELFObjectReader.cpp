@@ -14,6 +14,7 @@
 #include "mcld/LD/EhFrameReader.h"
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/LDContext.h"
+#include "mcld/LD/MergeStringReader.h"
 #include "mcld/Target/GNULDBackend.h"
 #include "mcld/Support/MsgHandling.h"
 #include "mcld/Support/MemoryArea.h"
@@ -38,6 +39,7 @@ ELFObjectReader::ELFObjectReader(GNULDBackend& pBackend,
     : ObjectReader(),
       m_pELFReader(NULL),
       m_pEhFrameReader(NULL),
+      m_pMergeStringReader(NULL),
       m_Builder(pBuilder),
       m_ReadFlag(ParseEhFrame),
       m_Backend(pBackend),
@@ -50,6 +52,7 @@ ELFObjectReader::ELFObjectReader(GNULDBackend& pBackend,
   }
 
   m_pEhFrameReader = new EhFrameReader();
+  m_pMergeStringReader = new MergeStringReader();
 }
 
 /// destructor
@@ -204,18 +207,32 @@ bool ELFObjectReader::readSections(Input& pInput) {
       case LDFileFormat::DATA:
       case LDFileFormat::Note:
       case LDFileFormat::MetaData: {
+        if (m_Backend.isMergeStringSection(**section)) {
+          // sections with mergeable strings
+          MergeString* merge_string = IRBuilder::CreateMergeString(**section,
+                                                                   false);
+          m_pMergeStringReader->read<32, true>(pInput, *merge_string);
+        } else {
         SectionData* sd = IRBuilder::CreateSectionData(**section);
-        if (!m_pELFReader->readRegularSection(pInput, *sd))
-          fatal(diag::err_cannot_read_section) << (*section)->name();
+          if (!m_pELFReader->readRegularSection(pInput, *sd))
+            fatal(diag::err_cannot_read_section) << (*section)->name();
+        }
         break;
       }
       case LDFileFormat::Debug: {
         if (m_Config.options().stripDebug()) {
           (*section)->setKind(LDFileFormat::Ignore);
         } else {
-          SectionData* sd = IRBuilder::CreateSectionData(**section);
-          if (!m_pELFReader->readRegularSection(pInput, *sd)) {
-            fatal(diag::err_cannot_read_section) << (*section)->name();
+          if (m_Backend.isMergeStringSection(**section)) {
+            // sections with mergeable strings
+            MergeString* merge_string = IRBuilder::CreateMergeString(**section,
+                                                                     false);
+            m_pMergeStringReader->read<32, true>(pInput, *merge_string);
+          } else {
+            SectionData* sd = IRBuilder::CreateSectionData(**section);
+            if (!m_pELFReader->readRegularSection(pInput, *sd)) {
+              fatal(diag::err_cannot_read_section) << (*section)->name();
+            }
           }
         }
         break;
@@ -268,6 +285,19 @@ bool ELFObjectReader::readSections(Input& pInput) {
     }
   }  // end of for all sections
 
+  return true;
+}
+
+bool ELFObjectReader::readMergeStrings(llvm::StringRef pStrings,
+                                       LDSection& pSection) {
+
+  // sections with mergeable strings
+  MergeString* merge_string = NULL;
+  if (!pSection.hasMergeString())
+    merge_string = IRBuilder::CreateMergeString(pSection, false);
+  else
+    merge_string = pSection.getMergeString();
+  m_pMergeStringReader->read<32, true>(pStrings, *merge_string);
   return true;
 }
 
