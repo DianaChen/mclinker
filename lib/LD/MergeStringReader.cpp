@@ -46,10 +46,22 @@ bool MergeStringReader::read<32, true>(Input& pInput,
   llvm::StringRef sect_region =
       pInput.memArea()->request(file_off, section.size());
 
+  read<32, true>(sect_region, pMergeString);
+  return true;
+}
+
+template <>
+bool MergeStringReader::read<32, true>(llvm::StringRef pStrings,
+                                       MergeString& pMergeString) {
+  if (pStrings.size() == 0) {
+    NullFragment* frag = new NullFragment();
+    pMergeString.getSectionData().getFragmentList().push_back(frag);
+    return true;
+  }
   size_t frag_off = 0x0;
-  const char* str = sect_region.begin();
+  const char* str = pStrings.begin();
   // split the section contents into fragments those with one string each
-  while (str < sect_region.end()) {
+  while (str < pStrings.end()) {
     size_t len = string_length(str);
     pMergeString.addString(llvm::StringRef(str, len), frag_off);
     frag_off += len;

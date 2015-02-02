@@ -29,12 +29,20 @@ class MergeStringReader {
   /// into a set of RegionFragment, each with only one string.
   template <size_t BITCLASS, bool SAME_ENDIAN>
   bool read(Input& pInput, MergeString& pMergeString);
+
+  /// read - read pStrings and split it  into a set of RegionFragment, each with
+  /// only one string.
+  template <size_t BITCLASS, bool SAME_ENDIAN>
+  bool read(llvm::StringRef pStrings, MergeString& pMergeString);
 };
 
 template <>
 bool MergeStringReader::read<32, true>(Input& pInput,
                                        MergeString& pMergeString);
 
+template <>
+bool MergeStringReader::read<32, true>(llvm::StringRef pStrings,
+                                       MergeString& pMergeString);
 }  // namespace mcld
 
 #endif  // MCLD_LD_MERGESTRINGREADER_H_
