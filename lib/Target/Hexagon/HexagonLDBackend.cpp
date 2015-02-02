@@ -673,7 +673,9 @@ bool HexagonLDBackend::mergeSection(Module& pModule,
     MoveSectionDataAndSort(*pInputSection.getSectionData(), *sd);
   } else {
     ObjectBuilder builder(pModule);
-    builder.MergeSection(pInputFile, pInputSection);
+    std::pair<SectionMap::mapping, LDSection*> ret =
+        builder.CreateSectionFromInput(pInputFile, pInputSection);
+    builder.MergeSection(*ret.second, pInputSection, ret.first);
   }
   return true;
 }

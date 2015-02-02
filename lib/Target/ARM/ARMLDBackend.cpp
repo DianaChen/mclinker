@@ -474,7 +474,9 @@ bool ARMGNULDBackend::mergeSection(Module& pModule,
 
     default: {
       ObjectBuilder builder(pModule);
-      builder.MergeSection(pInput, pSection);
+      std::pair<SectionMap::mapping, LDSection*> ret =
+          builder.CreateSectionFromInput(pInput, pSection);
+      builder.MergeSection(*ret.second, pSection, ret.first);
       return true;
     }
   }  // end of switch

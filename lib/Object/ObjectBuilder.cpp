@@ -50,74 +50,75 @@ LDSection* ObjectBuilder::CreateSection(const std::string& pName,
   return output_sect;
 }
 
-/// MergeSection - merge the pInput section to the pOutput section
-LDSection* ObjectBuilder::MergeSection(const Input& pInputFile,
-                                       LDSection& pInputSection) {
+// CreateSection - create an output section according to input section
+std::pair<SectionMap::mapping, LDSection*>
+ObjectBuilder::CreateSectionFromInput(const Input& pInputFile,
+                                      const LDSection& pInputSection) {
+  // try to get one from output LDSection
   SectionMap::mapping pair = m_Module.getScript().sectionMap().find(
       pInputFile.path().native(), pInputSection.name());
 
-  if (pair.first != NULL && pair.first->isDiscard()) {
-    pInputSection.setKind(LDFileFormat::Ignore);
-    return NULL;
-  }
+  LDSection* output_sect = NULL;
+  // return NULL if the output section has been discarded
+  if (pair.first != NULL && pair.first->isDiscard())
+    return std::make_pair(pair, output_sect);
 
   std::string output_name =
       (pair.first == NULL) ? pInputSection.name() : pair.first->name();
-  LDSection* target = m_Module.getSection(output_name);
 
-  if (target == NULL) {
-    target = LDSection::Create(output_name,
-                               pInputSection.kind(),
-                               pInputSection.type(),
-                               pInputSection.flag());
-    target->setAlign(pInputSection.align());
-    m_Module.getSectionTable().push_back(target);
+  output_sect = m_Module.getSection(output_name);
+  if (output_sect == NULL) {
+    output_sect = LDSection::Create(output_name,
+                                    pInputSection.kind(),
+                                    pInputSection.type(),
+                                    pInputSection.flag());
+    output_sect->setAlign(pInputSection.align());
+    m_Module.getSectionTable().push_back(output_sect);
+  }
+  return std::make_pair(pair, output_sect);
+}
+
+/// MergeSection - merge the pInput section to the pOutput section
+void ObjectBuilder::MergeSection(LDSection& pOutputSection,
+                                 LDSection& pInputSection,
+                                 SectionMap::mapping pSectMapping) {
+  if (!pOutputSection.hasSectionData())
+    IRBuilder::CreateSectionData(pOutputSection);
+
+  SectionData* data = NULL;
+  if (pSectMapping.first != NULL) {
+    assert(pSectMapping.second != NULL);
+    data = pSectMapping.second->getSection()->getSectionData();
+    if (pSectMapping.first->prolog().hasSubAlign())
+      pInputSection.setAlign(pSectMapping.second->getSection()->align());
+  } else {
+    // orphan section
+    data = pOutputSection.getSectionData();
   }
 
-  switch (target->kind()) {
-    case LDFileFormat::EhFrame: {
-      EhFrame* eh_frame = NULL;
-      if (target->hasEhFrame())
-        eh_frame = target->getEhFrame();
-      else
-        eh_frame = IRBuilder::CreateEhFrame(*target);
-
-      eh_frame->merge(pInputFile, *pInputSection.getEhFrame());
-      UpdateSectionAlign(*target, pInputSection);
-      return target;
-    }
-    default: {
-      if (!target->hasSectionData())
-        IRBuilder::CreateSectionData(*target);
-
-      SectionData* data = NULL;
-      if (pair.first != NULL) {
-        assert(pair.second != NULL);
-        data = pair.second->getSection()->getSectionData();
-
-        // force input alignment from ldscript if any
-        if (pair.first->prolog().hasSubAlign()) {
-          pInputSection.setAlign(pair.second->getSection()->align());
-        }
-      } else {
-        // orphan section
-        data = target->getSectionData();
-      }
-
-      if (MoveSectionData(*pInputSection.getSectionData(), *data)) {
-        UpdateSectionAlign(*target, pInputSection);
-        return target;
-      }
-      return NULL;
-    }
+  if (MoveSectionData(*pInputSection.getSectionData(), *data)) {
+    UpdateSectionAlign(pOutputSection, pInputSection);
   }
-  return target;
+}
+
+/// MergeEhFrame - merge the pInputSection to output one. pInputSection is the
+/// EhFrame section
+void ObjectBuilder::MergeEhFrame(const Input& pInputFile,
+                                 LDSection& pOutputSection,
+                                 LDSection& pInputSection) {
+  EhFrame* eh_frame = NULL;
+  if (pOutputSection.hasEhFrame())
+    eh_frame = pOutputSection.getEhFrame();
+  else
+    eh_frame = IRBuilder::CreateEhFrame(pOutputSection);
+
+  eh_frame->merge(pInputFile, *pInputSection.getEhFrame());
+  UpdateSectionAlign(pOutputSection, pInputSection);
 }
 
 /// MoveSectionData - move the fragments of pTO section data to pTo
 bool ObjectBuilder::MoveSectionData(SectionData& pFrom, SectionData& pTo) {
   assert(&pFrom != &pTo && "Cannot move section data to itself!");
-
   uint64_t offset = pTo.getSection().size();
   AlignFragment* align = NULL;
   if (pFrom.getSection().align() > 1) {

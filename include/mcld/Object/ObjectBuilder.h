@@ -10,6 +10,7 @@
 #define MCLD_OBJECT_OBJECTBUILDER_H_
 #include "mcld/LD/EhFrame.h"
 #include "mcld/LD/LDFileFormat.h"
+#include "mcld/Object/SectionMap.h"
 
 #include <llvm/Support/DataTypes.h>
 
@@ -54,15 +55,42 @@ class ObjectBuilder {
                            uint32_t pFlag,
                            uint32_t pAlign = 0x0);
 
-  /// MergeSection - merge the pInput section to mcld::Module.
-  /// This function moves all fragments in pInputSection to the corresponding
-  /// output section of mcld::Module.
+  /// CreateSectionFromInput - To create an output LDSection according to the
+  /// input LDSection and the input file and in mcld::Module.
+  /// Link scripts and command line options define some SECTIONS commands that
+  /// specify where input sections are placed into output sections. This
+  /// function
+  /// checks SECTIONS commands to change given name to the output section name.
+  /// This function creates a new LDSection and push the created LDSection into
+  /// @ref mcld::Module.
+  ///
+  /// To create an input LDSection in mcld::LDContext, use @ref
+  /// LDSection::Create().
+  ///
+  /// @see SectionMap
+  ///
+  /// @param [in] pInputFile Input section cotains pInputSection
+  /// @param [in] pInputSection The given input section
+  std::pair<SectionMap::mapping, LDSection*>
+  CreateSectionFromInput(const Input& pInputFile,
+                         const LDSection& pInputSection);
+
+  /// MergeSection - merge the pInputSection to pOutputSection in Module.
+  /// This function moves all fragments in pInputSection to pOutputSection.
+  /// pSectionMapping provides the SectionMap::mapping of pInputSection to
+  /// pOutputSection
   ///
   /// @see SectionMap
   /// @param [in] pInputSection The merged input section.
-  /// @return The merged output section. If the corresponding output sections
-  /// is not defined, return NULL.
-  LDSection* MergeSection(const Input& pInputFile, LDSection& pInputSection);
+  void MergeSection(LDSection& pOutputSection,
+                    LDSection& pInputSection,
+                    SectionMap::mapping pSectMapping);
+
+  /// MergeEhFrame - merge the pInputSection to output one. pInputSection is
+  /// the EhFrame section
+  void MergeEhFrame(const Input& pInputFile,
+                    LDSection& pOutputSection,
+                    LDSection& pInputSection);
 
   /// MoveSectionData - move the fragment of pFrom to pTo section data.
   static bool MoveSectionData(SectionData& pFrom, SectionData& pTo);

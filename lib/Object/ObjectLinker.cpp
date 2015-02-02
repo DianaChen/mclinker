@@ -367,28 +367,38 @@ bool ObjectLinker::mergeSections() {
         case LDFileFormat::EhFrame: {
           if (!(*sect)->hasEhFrame())
             continue;  // skip
-
-          LDSection* out_sect = NULL;
-          if ((out_sect = builder.MergeSection(**obj, **sect)) != NULL) {
-            if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
-              error(diag::err_cannot_merge_section) << (*sect)->name()
-                                                    << (*obj)->name();
-              return false;
-            }
+          // get output section
+          LDSection* out_sect =
+              (builder.CreateSectionFromInput(**obj, **sect)).second;
+          if (out_sect == NULL) {
+            (*sect)->setKind(LDFileFormat::Ignore);
+            continue;
+          }
+          builder.MergeEhFrame(**obj, *out_sect, **sect);
+          if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
+            error(diag::err_cannot_merge_section) << (*sect)->name()
+                                                  << (*obj)->name();
+            return false;
           }
           break;
         }
         default: {
+          // get output section
+          std::pair<SectionMap::mapping, LDSection*> ret =
+              builder.CreateSectionFromInput(**obj, **sect);
+          LDSection* out_sect = ret.second;
+          if (out_sect == NULL) {
+            (*sect)->setKind(LDFileFormat::Ignore);
+            continue;
+          }
+          // normal sections
           if (!(*sect)->hasSectionData())
             continue;  // skip
-
-          LDSection* out_sect = NULL;
-          if ((out_sect = builder.MergeSection(**obj, **sect)) != NULL) {
-            if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
-              error(diag::err_cannot_merge_section) << (*sect)->name()
-                                                    << (*obj)->name();
-              return false;
-            }
+          builder.MergeSection(*out_sect, **sect, ret.first);
+          if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
+            error(diag::err_cannot_merge_section) << (*sect)->name()
+                                                  << (*obj)->name();
+            return false;
           }
           break;
         }
