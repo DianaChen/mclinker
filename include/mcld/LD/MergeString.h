@@ -142,7 +142,7 @@ class MergeStringOutput : public MergeString {
  private:
   struct EntryCompare {
     bool operator() (const Entry* pX, const Entry* pY) const
-    { return pX->getRegion().compare(pY->getRegion()); }
+    { return (pX->getRegion().compare(pY->getRegion()) < 0); }
   };
 
   typedef std::set<Entry*, EntryCompare> StringPoolTy;
