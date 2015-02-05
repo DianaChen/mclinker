@@ -397,7 +397,7 @@ bool ARMGNULDBackend::finalizeTargetSymbols() {
 
 
 /// preMergeSections - hooks to be executed before merging sections
-void ARMGNULDBackend::preMergeSections(Module& pModule) {
+void ARMGNULDBackend::doPreMergeSections(Module& pModule) {
   scanInputExceptionSections(pModule);
 }
 

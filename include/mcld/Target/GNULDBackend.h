@@ -409,6 +409,18 @@ class GNULDBackend : public TargetLDBackend {
   /// placeOutputSections - place output sections based on SectionMap
   void placeOutputSections(Module& pModule);
 
+  /// preMergeSections - hooks to be executed before merging sections
+  void preMergeSections(Module& pModule);
+
+  /// postMergeSections - hooks to be executed after merging sections
+  void postMergeSections(Module& pModule);
+
+  /// doPreMergeSections - hooks to be executed before merging sections
+  virtual void doPreMergeSections(Module& pModule) { }
+
+  /// doPostMergeSections - hooks to be executed after merging sections
+  virtual void doPostMergeSections(Module& pModule) { }
+
   /// layout - layout method
   void layout(Module& pModule);
 

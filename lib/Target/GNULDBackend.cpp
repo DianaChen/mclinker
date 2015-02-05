@@ -2432,6 +2432,16 @@ void GNULDBackend::placeOutputSections(Module& pModule) {
   sectionMap.fixupDotSymbols();
 }
 
+/// preMergeSections - hooks to be executed before merging sections
+void GNULDBackend::preMergeSections(Module& pModule) {
+  doPreMergeSections(pModule);
+}
+
+/// postMergeSections - hooks to be executed after merging sections
+void GNULDBackend::postMergeSections(Module& pModule) {
+  doPostMergeSections(pModule);
+}
+
 /// layout - layout method
 void GNULDBackend::layout(Module& pModule) {
   // 1. place output sections based on SectionMap from SECTIONS command
