@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 #include "mcld/LD/MergeString.h"
 
+#include "mcld/Fragment/FragmentRef.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/SectionData.h"
 #include "mcld/Support/GCFactory.h"
@@ -41,13 +42,13 @@ uint64_t MergeString::getOutputOffset(uint64_t pInputOffset,
   return doGetOutputOffset(pInputOffset, pFrag);
 }
 
-Fragment& MergeString::getOutputFragment(Fragment& pFrag) {
-  return llvm::cast<Entry>(pFrag).getOutputEntry();
+Fragment& MergeString::getOutputFragment(FragmentRef& pFragRef) {
+  return doGetOutputFragment(pFragRef);
 }
 
 const Fragment&
-MergeString::getOutputFragment(const Fragment& pFrag) const {
-  return llvm::cast<Entry>(pFrag).getOutputEntry();
+MergeString::getOutputFragment(const FragmentRef& pFragRef) const {
+  return doGetOutputFragment(pFragRef);
 }
 
 //===----------------------------------------------------------------------===//
@@ -116,6 +117,15 @@ uint64_t MergeStringOutput::doGetOutputOffset(uint64_t pInputOffset,
   return m_FragSectMap.at(&pFrag)->getOutputOffset(pInputOffset, pFrag);
 }
 
+Fragment& MergeStringOutput::doGetOutputFragment(FragmentRef& pFragRef) {
+  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+}
+
+const Fragment&
+MergeStringOutput::doGetOutputFragment(const FragmentRef& pFragRef) const {
+  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+}
+
 //===----------------------------------------------------------------------===//
 // MergeStringInput
 //===----------------------------------------------------------------------===//
@@ -148,6 +158,33 @@ uint64_t MergeStringInput::doGetOutputOffset(uint64_t pInputOffset,
                                              const Fragment& pFrag) const {
   assert(m_InOffsetMap.find(pInputOffset) != m_InOffsetMap.end());
   return m_InOffsetMap.at(pInputOffset)->getOutputEntry().getOffset();
+}
+
+Fragment& MergeStringInput::doGetOutputFragment(FragmentRef& pFragRef) {
+  // If this MergeStringInput is created during MergeSections,
+  // the data in the target section has been read into a SectionData as a
+  // normal section. And then the data will be read again to MergeString during
+  // MergeSections, while this will be done after read symbols. Hence the symbol
+  // will point to the fragment in the original SectionData. In this case, we
+  // can only get the output fragment according to the fragment offset (In
+  // finalizeSymbolValue, those symbols defined in this section still hold
+  // FragmentRef to m_pPreservedData)
+  // FIXME: this is a trick that we assume the original SectionData contains
+  // only one RegionFragment (so the offset could be correct)
+  if (pFragRef.frag()->getParent() != m_pSectionData) {
+    assert(m_InOffsetMap.find(pFragRef.offset()) != m_InOffsetMap.end());
+    return m_InOffsetMap.at(pFragRef.offset())->getOutputEntry();
+  }
+  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+}
+
+const Fragment&
+MergeStringInput::doGetOutputFragment(const FragmentRef& pFragRef) const {
+  if (pFragRef.frag()->getParent() != m_pSectionData) {
+    assert(m_InOffsetMap.find(pFragRef.offset()) != m_InOffsetMap.end());
+    return m_InOffsetMap.at(pFragRef.offset())->getOutputEntry();
+  }
+  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
 }
 
 }  // namespace mcld

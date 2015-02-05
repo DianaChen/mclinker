@@ -20,6 +20,7 @@
 
 namespace mcld {
 
+class FragmentRef;
 class LDSection;
 class SectionData;
 
@@ -51,11 +52,10 @@ class MergeString {
   uint64_t getOutputOffset(uint64_t pInputOffset,
                            const Fragment& pFrag) const;
 
-  /// getOutputFragment - get the output fragment of the given merge string
-  /// fragment
-  Fragment& getOutputFragment(Fragment& pFrag);
+  /// getOutputFragment - get the output fragment of the given FragmentRef
+  Fragment& getOutputFragment(FragmentRef& pFragRef);
 
-  const Fragment& getOutputFragment(const Fragment& pFrag) const;
+  const Fragment& getOutputFragment(const FragmentRef& pFragRef) const;
 
 
   virtual void addString(llvm::StringRef pString, uint64_t pInputOffset) {
@@ -96,6 +96,12 @@ class MergeString {
  protected:
   virtual uint64_t doGetOutputOffset(uint64_t pInputOffset,
                                      const Fragment& pFrag) const = 0;
+
+  /// getOutputFragment - get the output fragment of the given FragmentRef
+  virtual Fragment& doGetOutputFragment(FragmentRef& pFragRef) = 0;
+  virtual const Fragment&
+      doGetOutputFragment(const FragmentRef& pFragRef) const = 0;
+
  protected:
   LDSection* m_pSection;
   SectionData* m_pSectionData;
@@ -126,10 +132,6 @@ class MergeStringOutput : public MergeString {
   /// save memory
   void clearStringPool();
 
-  /// getOutputOffset - get the output offset from the given input offset
-  uint64_t doGetOutputOffset(uint64_t pInputOffset,
-                             const Fragment& pFrag) const;
-
   void addString(llvm::StringRef pString, uint64_t pInputOffset) {
     assert(false);
   }
@@ -138,6 +140,15 @@ class MergeStringOutput : public MergeString {
   virtual MergeString& merge(MergeString& pOther);
 
   bool isOutput() const { return true; }
+
+ protected:
+  /// getOutputOffset - get the output offset from the given input offset
+  uint64_t doGetOutputOffset(uint64_t pInputOffset,
+                             const Fragment& pFrag) const;
+
+  /// getOutputFragment - get the output fragment of the given FragmentRef
+  Fragment& doGetOutputFragment(FragmentRef& pFragRef);
+  const Fragment& doGetOutputFragment(const FragmentRef& pFragRef) const;
 
  private:
   struct EntryCompare {
@@ -179,10 +190,15 @@ class MergeStringInput : public MergeString {
   // addString - create an Entry for pString and add it to this section
   void addString(llvm::StringRef pString, uint64_t pInputOffset);
 
+  bool isOutput() const { return false; }
+
+ protected:
   uint64_t doGetOutputOffset(uint64_t pInputOffset,
                              const Fragment& pFrag) const;
 
-  bool isOutput() const { return false; }
+  /// getOutputFragment - get the output fragment of the given FragmentRef
+  Fragment& doGetOutputFragment(FragmentRef& pFragRef);
+  const Fragment& doGetOutputFragment(const FragmentRef& pFragRef) const;
 
  private:
   typedef std::map<uint64_t, Entry*> OffsetMapTy;
