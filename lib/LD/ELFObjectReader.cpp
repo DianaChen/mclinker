@@ -290,13 +290,8 @@ bool ELFObjectReader::readSections(Input& pInput) {
 
 bool ELFObjectReader::readMergeStrings(llvm::StringRef pStrings,
                                        LDSection& pSection) {
-
   // sections with mergeable strings
-  MergeString* merge_string = NULL;
-  if (!pSection.hasMergeString())
-    merge_string = IRBuilder::CreateMergeString(pSection, false);
-  else
-    merge_string = pSection.getMergeString();
+  MergeString* merge_string = IRBuilder::CreateMergeString(pSection, false);
   m_pMergeStringReader->read<32, true>(pStrings, *merge_string);
   return true;
 }

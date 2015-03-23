@@ -23,6 +23,7 @@
 #include "mcld/LD/ELFSegmentFactory.h"
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/LDSymbol.h"
+#include "mcld/LD/MergeString.h"
 #include "mcld/LD/RelocData.h"
 #include "mcld/LD/SectionData.h"
 #include "mcld/Support/MsgHandling.h"
@@ -386,8 +387,13 @@ void ELFObjectWriter::emitSectionData(const LDSection& pSection,
       sd = pSection.getEhFrame()->getSectionData();
       break;
     default:
-      assert(pSection.hasSectionData());
-      sd = pSection.getSectionData();
+      if (m_Backend.isMergeStringSection(pSection)) {
+        assert(pSection.hasMergeString());
+        sd = &pSection.getMergeString()->getSectionData();
+      } else {
+        assert(pSection.hasSectionData());
+        sd = pSection.getSectionData();
+      }
       break;
   }
   emitSectionData(*sd, pRegion);

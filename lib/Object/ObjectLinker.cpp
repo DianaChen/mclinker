@@ -297,7 +297,7 @@ bool ObjectLinker::readRelocations() {
   return true;
 }
 
-/// mergeSections - put allinput sections into output sections
+/// mergeSections - put all input sections into output sections
 bool ObjectLinker::mergeSections() {
   // run the target-dependent hooks before merging sections
   m_LDBackend.preMergeSections(*m_pModule);
@@ -391,14 +391,43 @@ bool ObjectLinker::mergeSections() {
             (*sect)->setKind(LDFileFormat::Ignore);
             continue;
           }
-          // normal sections
-          if (!(*sect)->hasSectionData())
-            continue;  // skip
-          builder.MergeSection(*out_sect, **sect, ret.first);
-          if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
-            error(diag::err_cannot_merge_section) << (*sect)->name()
-                                                  << (*obj)->name();
-            return false;
+          // merge string sections
+          if (m_LDBackend.isMergeStringSection(*out_sect)) {
+            // if the output is MS section but the input isn't, which means that
+            // the input is read in as a regular section, we should read it
+            // again as a MergeString section and set this input as merge string
+            // section
+            if (!m_LDBackend.isMergeStringSection(**sect)) {
+              SectionData* sd = (*sect)->getSectionData();
+              (*sect)->setSectionData(NULL);
+              if (sd == NULL)
+                continue;
+              SectionData::iterator it, end = sd->end();
+              for (it = sd->begin(); it != end; ++it) {
+                if ((*it).getKind() != Fragment::Region)
+                  continue;
+                getObjectReader()->readMergeStrings(
+                    (llvm::cast<RegionFragment>(*it)).getRegion(),
+                    **sect);
+              }
+              m_LDBackend.setMergeStringSection(**sect);
+            }
+            builder.MergeMergeString(*out_sect, **sect);
+             if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
+               error(diag::err_cannot_merge_section) << (*sect)->name()
+                                                     << (*obj)->name();
+               return false;
+             }
+          } else {
+          // normal section
+            if (!(*sect)->hasSectionData())
+              continue;  // skip
+            builder.MergeSection(*out_sect, **sect, ret.first);
+            if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
+              error(diag::err_cannot_merge_section) << (*sect)->name()
+                                                    << (*obj)->name();
+              return false;
+            }
           }
           break;
         }
@@ -444,10 +473,16 @@ bool ObjectLinker::mergeSections() {
 }
 
 void ObjectLinker::addSymbolToOutput(ResolveInfo& pInfo, Module& pModule) {
+  LDSymbol* out_sym = pInfo.outSymbol();
+
   // section symbols will be defined by linker later, we should not add section
   // symbols to output here
-  if (ResolveInfo::Section == pInfo.type() || pInfo.outSymbol() == NULL)
+  if (ResolveInfo::Section == pInfo.type() || out_sym == NULL)
     return;
+
+  LDSection* out_sect = NULL;
+  if (out_sym->hasFragRef())
+    out_sect = &out_sym->fragRef()->frag()->getParent()->getSection();
 
   // if the symbols defined in the Ignore sections (e.g. discared by GC), then
   // not to put them to output
@@ -456,20 +491,24 @@ void ObjectLinker::addSymbolToOutput(ResolveInfo& pInfo, Module& pModule) {
   // will refer to input LDSection and has bad result when emitting their
   // section index. However, .debug_str actually does not need symobl in
   // shrad/executable objects, so it's fine to do so.
-  if (pInfo.outSymbol()->hasFragRef() &&
-      (LDFileFormat::Ignore ==
-           pInfo.outSymbol()
-               ->fragRef()
-               ->frag()
-               ->getParent()
-               ->getSection()
-               .kind()))
+  if (out_sect != NULL && out_sect->kind() == LDFileFormat::Ignore)
     return;
 
+  // if the symbol defined in the MergeString sections, update its FragRef to
+  // the merged one
+  if (out_sect != NULL && m_LDBackend.isMergeStringSection(*out_sect)) {
+    assert(out_sect->hasMergeString());
+    MergeString* ms = out_sect->getMergeString();
+    out_sym->setFragmentRef(
+        FragmentRef::Create(
+            ms->getOutputFragment(*out_sym->fragRef()),
+            0x0));
+  }
+
   if (pInfo.shouldForceLocal(m_Config))
-    pModule.getSymbolTable().forceLocal(*pInfo.outSymbol());
+    pModule.getSymbolTable().forceLocal(*out_sym);
   else
-    pModule.getSymbolTable().add(*pInfo.outSymbol());
+    pModule.getSymbolTable().add(*out_sym);
 }
 
 void ObjectLinker::addSymbolsToOutput(Module& pModule) {
