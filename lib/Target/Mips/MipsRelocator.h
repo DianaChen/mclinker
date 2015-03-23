@@ -63,8 +63,6 @@ class MipsRelocator : public Relocator {
   /// @return - return true for finalization success
   bool finalizeApply(Input& pInput);
 
-  Result applyRelocation(Relocation& pReloc);
-
   /// getMergeStringOffset - get the offset from the relocation target. This is
   /// used to get the relocation target symbol offset.
   uint32_t getMergeStringOffset(Relocation& pReloc) const;
@@ -133,6 +131,8 @@ class MipsRelocator : public Relocator {
 
   /// isLocalReloc - handle relocation as a local symbol
   bool isLocalReloc(ResolveInfo& pSym) const;
+
+  Result doApplyRelocation(Relocation& pReloc);
 
  private:
   typedef llvm::DenseSet<Relocation*> RelocationSet;

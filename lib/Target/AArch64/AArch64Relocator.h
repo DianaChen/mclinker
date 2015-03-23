@@ -62,8 +62,6 @@ class AArch64Relocator : public Relocator {
   AArch64Relocator(AArch64GNULDBackend& pParent, const LinkerConfig& pConfig);
   ~AArch64Relocator();
 
-  Result applyRelocation(Relocation& pRelocation);
-
   AArch64GNULDBackend& getTarget() { return m_Target; }
 
   const AArch64GNULDBackend& getTarget() const { return m_Target; }
@@ -120,6 +118,9 @@ class AArch64Relocator : public Relocator {
   /// @return the output LDSymbol of the copy symbol
   LDSymbol& defineSymbolforCopyReloc(IRBuilder& pLinker,
                                      const ResolveInfo& pSym);
+
+ protected:
+  Result doApplyRelocation(Relocation& pRelocation);
 
  private:
   AArch64GNULDBackend& m_Target;

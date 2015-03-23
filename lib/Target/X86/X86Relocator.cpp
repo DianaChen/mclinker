@@ -275,7 +275,7 @@ X86_32Relocator::X86_32Relocator(X86_32GNULDBackend& pParent,
     : X86Relocator(pConfig), m_Target(pParent) {
 }
 
-Relocator::Result X86_32Relocator::applyRelocation(Relocation& pRelocation) {
+Relocator::Result X86_32Relocator::doApplyRelocation(Relocation& pRelocation) {
   Relocation::Type type = pRelocation.type();
 
   if (type >= sizeof(X86_32ApplyFunctions) / sizeof(X86_32ApplyFunctions[0])) {
@@ -1234,7 +1234,7 @@ X86_64Relocator::X86_64Relocator(X86_64GNULDBackend& pParent,
     : X86Relocator(pConfig), m_Target(pParent) {
 }
 
-Relocator::Result X86_64Relocator::applyRelocation(Relocation& pRelocation) {
+Relocator::Result X86_64Relocator::doApplyRelocation(Relocation& pRelocation) {
   Relocation::Type type = pRelocation.type();
 
   if (type >= sizeof(X86_64ApplyFunctions) / sizeof(X86_64ApplyFunctions[0])) {

@@ -39,12 +39,7 @@ class Relocator {
   virtual ~Relocator() = 0;
 
   /// applyRelocation - general apply function
-  virtual Result applyRelocation(Relocation& pRelocation) = 0;
-
-  /// applyRelocationForMergeString - apply the relocation against the symbol
-  /// define on merge string section
-  virtual Result applyRelocationForMergeString(Relocation& pRelocation,
-                                               MergeString& pTargetSection);
+  Result applyRelocation(Relocation& pRelocation);
 
   /// scanRelocation - When read in relocations, backend can do any modification
   /// to relocation and generate empty entries, such as GOT, dynamic relocation
@@ -124,6 +119,14 @@ class Relocator {
 
  protected:
   const LinkerConfig& config() const { return m_Config; }
+
+  /// doApplyRelocation - applyRelocation hook
+  virtual Result doApplyRelocation(Relocation& pRelocation) = 0;
+
+  /// applyRelocationForMergeString - apply the relocation against the symbol
+  /// define in merge string sections
+  virtual Result applyRelocationForMergeString(Relocation& pRelocation,
+                                               MergeString& pTargetSection);
 
  private:
   const LinkerConfig& m_Config;

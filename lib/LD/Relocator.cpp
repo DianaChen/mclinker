@@ -18,6 +18,7 @@
 #include "mcld/LD/SectionData.h"
 #include "mcld/Support/Demangle.h"
 #include "mcld/Support/MsgHandling.h"
+#include "mcld/Target/TargetLDBackend.h"
 
 #include <sstream>
 
@@ -95,6 +96,25 @@ void Relocator::issueUndefRef(Relocation& pReloc,
 
   fatal(diag::undefined_reference_text) << reloc_sym << pInput.path()
                                         << caller_file_name << caller_func_name;
+}
+
+Relocator::Result Relocator::applyRelocation(Relocation& pRelocation) {
+  // relocation target symbol defined in merge string sections
+  if (pRelocation.symInfo()->outSymbol()->hasFragRef()) {
+    LDSection& target_sect = pRelocation
+                                 .symInfo()
+                                 ->outSymbol()
+                                 ->fragRef()
+                                 ->frag()
+                                 ->getParent()
+                                 ->getSection();
+    if (getTarget().isMergeStringSection(target_sect)) {
+      assert(target_sect.hasMergeString());
+      return applyRelocationForMergeString(pRelocation,
+                                           *target_sect.getMergeString());
+    }
+  }
+  return doApplyRelocation(pRelocation);
 }
 
 Relocator::Result

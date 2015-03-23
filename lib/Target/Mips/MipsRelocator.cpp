@@ -151,7 +151,7 @@ MipsRelocator::MipsRelocator(MipsGNULDBackend& pParent,
       m_CurrentLo16Reloc(NULL) {
 }
 
-Relocator::Result MipsRelocator::applyRelocation(Relocation& pReloc) {
+Relocator::Result MipsRelocator::doApplyRelocation(Relocation& pReloc) {
   // If m_CurrentLo16Reloc is not NULL we are processing
   // postponed relocation. Otherwise check relocation type
   // and postpone it for later handling.

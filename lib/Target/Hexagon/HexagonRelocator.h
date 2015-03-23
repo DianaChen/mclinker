@@ -67,8 +67,6 @@ class HexagonRelocator : public Relocator {
   HexagonRelocator(HexagonLDBackend& pParent, const LinkerConfig& pConfig);
   ~HexagonRelocator();
 
-  Result applyRelocation(Relocation& pRelocation);
-
   /// scanRelocation - determine the empty entries are needed or not and create
   /// the empty entries if needed.
   /// For Hexagon, following entries are check to create:
@@ -126,6 +124,8 @@ class HexagonRelocator : public Relocator {
   LDSymbol& defineSymbolforCopyReloc(IRBuilder& pLinker,
                                      const ResolveInfo& pSym,
                                      HexagonLDBackend& pTarget);
+
+  Result doApplyRelocation(Relocation& pRelocation);
 
  private:
   virtual void scanLocalReloc(Relocation& pReloc,

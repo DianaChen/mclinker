@@ -64,8 +64,6 @@ class X86Relocator : public Relocator {
   explicit X86Relocator(const LinkerConfig& pConfig);
   ~X86Relocator();
 
-  virtual Result applyRelocation(Relocation& pRelocation) = 0;
-
   virtual const char* getName(Relocation::Type pType) const = 0;
 
   const SymPLTMap& getSymPLTMap() const { return m_SymPLTMap; }
@@ -94,6 +92,8 @@ class X86Relocator : public Relocator {
   LDSymbol& defineSymbolforCopyReloc(IRBuilder& pLinker,
                                      const ResolveInfo& pSym,
                                      X86GNULDBackend& pTarget);
+
+  virtual Result doApplyRelocation(Relocation& pRelocation) = 0;
 
  private:
   virtual void scanLocalReloc(Relocation& pReloc,
@@ -126,8 +126,6 @@ class X86_32Relocator : public X86Relocator {
  public:
   X86_32Relocator(X86_32GNULDBackend& pParent, const LinkerConfig& pConfig);
 
-  Result applyRelocation(Relocation& pRelocation);
-
   X86_32GNULDBackend& getTarget() { return m_Target; }
 
   const X86_32GNULDBackend& getTarget() const { return m_Target; }
@@ -155,6 +153,9 @@ class X86_32Relocator : public X86Relocator {
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.
   void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset);
+
+ protected:
+  Result doApplyRelocation(Relocation& pRelocation);
 
  private:
   void scanLocalReloc(Relocation& pReloc,
@@ -190,8 +191,6 @@ class X86_64Relocator : public X86Relocator {
  public:
   X86_64Relocator(X86_64GNULDBackend& pParent, const LinkerConfig& pConfig);
 
-  Result applyRelocation(Relocation& pRelocation);
-
   X86_64GNULDBackend& getTarget() { return m_Target; }
 
   const X86_64GNULDBackend& getTarget() const { return m_Target; }
@@ -220,6 +219,9 @@ class X86_64Relocator : public X86Relocator {
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.
   void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset);
+
+ protected:
+  Result doApplyRelocation(Relocation& pRelocation);
 
  private:
   void scanLocalReloc(Relocation& pReloc,

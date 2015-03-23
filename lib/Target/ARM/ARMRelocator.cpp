@@ -304,7 +304,7 @@ ARMRelocator::ARMRelocator(ARMGNULDBackend& pParent,
 ARMRelocator::~ARMRelocator() {
 }
 
-Relocator::Result ARMRelocator::applyRelocation(Relocation& pRelocation) {
+Relocator::Result ARMRelocator::doApplyRelocation(Relocation& pRelocation) {
   Relocation::Type type = pRelocation.type();
   if (type > 130) {  // 131-255 doesn't noted in ARM spec
     return Relocator::Unknown;

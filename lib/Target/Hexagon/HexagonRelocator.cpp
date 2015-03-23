@@ -173,7 +173,7 @@ HexagonRelocator::HexagonRelocator(HexagonLDBackend& pParent,
 HexagonRelocator::~HexagonRelocator() {
 }
 
-Relocator::Result HexagonRelocator::applyRelocation(Relocation& pRelocation) {
+Relocator::Result HexagonRelocator::doApplyRelocation(Relocation& pRelocation) {
   Relocation::Type type = pRelocation.type();
 
   if (type > 85) {  // 86-255 relocs do not exists for Hexagon

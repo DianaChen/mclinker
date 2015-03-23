@@ -61,8 +61,6 @@ class ARMRelocator : public Relocator {
   ARMRelocator(ARMGNULDBackend& pParent, const LinkerConfig& pConfig);
   ~ARMRelocator();
 
-  Result applyRelocation(Relocation& pRelocation);
-
   ARMGNULDBackend& getTarget() { return m_Target; }
 
   const ARMGNULDBackend& getTarget() const { return m_Target; }
@@ -103,6 +101,9 @@ class ARMRelocator : public Relocator {
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.
   void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset);
+
+ protected:
+  Result doApplyRelocation(Relocation& pRelocation);
 
  private:
   void scanLocalReloc(Relocation& pReloc, const LDSection& pSection);
