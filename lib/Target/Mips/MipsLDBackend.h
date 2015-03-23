@@ -128,6 +128,12 @@ class MipsGNULDBackend : public GNULDBackend {
   /// in the specified input.
   uint64_t getGP0(const Input& pInput) const;
 
+  /// isMergeStringSection
+  /// FIXME: disabble merge string sections support. We do not support it for
+  /// MIPS
+  bool isMergeStringSection(const LDSection& pSect) const
+  { return false; }
+
  private:
   void defineGOTSymbol(IRBuilder& pBuilder);
   void defineGOTPLTSymbol(IRBuilder& pBuilder);

@@ -142,6 +142,12 @@ class HexagonLDBackend : public GNULDBackend {
 
   virtual uint32_t getGOTSymbolAddr() { return m_pGOTSymbol->value(); }
 
+  /// isMergeStringSection
+  /// FIXME: disabble merge string sections support. We do not support it for
+  /// Hexagon
+  bool isMergeStringSection(const LDSection& pSect) const
+  { return false; }
+
  protected:
   void defineGOTSymbol(IRBuilder& pBuilder, Fragment&);
 

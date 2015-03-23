@@ -107,10 +107,12 @@ class HexagonRelocator : public Relocator {
 
   /// getMergeStringOffset - get the offset from the relocation target. This is
   /// used to get the relocation target symbol offset.
+  /// FIXME:
   uint32_t getMergeStringOffset(Relocation& pReloc) const { return 0; }
 
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.
+  /// FIXME:
   void applyMergeStringOffset(Relocation& pReloc, uint32_t pOffset) {}
 
  protected:
