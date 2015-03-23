@@ -82,10 +82,12 @@ bool SectionSymbolSet::finalize(LDSection& pOutSect,
       break;
 
     default:
-      if (pBackend.isMergeStringSection(pOutSect) && pOutSect.hasMergeString())
-        data = &pOutSect.getMergeString()->getSectionData();
-      else
+      if (pBackend.isMergeStringSection(pOutSect)) {
+        if (pOutSect.hasMergeString())
+          data = &pOutSect.getMergeString()->getSectionData();
+      } else {
         data = pOutSect.getSectionData();
+      }
       break;
   }
   FragmentRef* frag_ref;
