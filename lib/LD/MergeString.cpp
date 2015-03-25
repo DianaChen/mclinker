@@ -187,4 +187,16 @@ MergeStringInput::doGetOutputFragment(const FragmentRef& pFragRef) const {
   return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
 }
 
+const LDSection&
+MergeStringInput::getOutputSection(const Fragment& pFrag) const {
+  const Entry& entry = llvm::cast<const Entry>(pFrag);
+  return entry.getOutputEntry().getParent()->getSection();
+}
+
+LDSection& MergeStringInput::getOutputSection(Fragment& pFrag) {
+  // get the section of output
+  Entry& entry = llvm::cast<Entry>(pFrag);
+  return entry.getOutputEntry().getParent()->getSection();
+}
+
 }  // namespace mcld

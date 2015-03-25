@@ -43,6 +43,10 @@ class MergeString {
   const SectionData& getSectionData() const { return *m_pSectionData; }
   SectionData& getSectionData() { return *m_pSectionData; }
 
+  /// getOutputSection - get the output section of the given fragment.
+  virtual const LDSection& getOutputSection(const Fragment& pFrag) const = 0;
+  virtual LDSection& getOutputSection(Fragment& pFrag) = 0;
+
   /// getOutputOffset - get the output offset of the given Fragment, pFrag
   uint64_t getOutputOffset(const Fragment& pFrag) const;
 
@@ -128,6 +132,13 @@ class MergeStringOutput : public MergeString {
   static void Destroy(MergeStringOutput*& pMS);
   static void Clear();
 
+  /// getOutputSection - get the output section of the given fragment.
+  virtual const LDSection& getOutputSection(const Fragment& pFrag) const
+  { return *m_pSection; }
+
+  virtual LDSection& getOutputSection(Fragment& pFrag)
+  { return *m_pSection; }
+
   /// clearStringPool - after merging all the strings, clear the string pool to
   /// save memory
   void clearStringPool();
@@ -186,6 +197,9 @@ class MergeStringInput : public MergeString {
   static MergeStringInput* Create(LDSection& pSection);
   static void Destroy(MergeStringInput*& pMS);
   static void Clear();
+
+  virtual const LDSection& getOutputSection(const Fragment& pFrag) const;
+  virtual LDSection& getOutputSection(Fragment& pFrag);
 
   // addString - create an Entry for pString and add it to this section
   void addString(llvm::StringRef pString, uint64_t pInputOffset);
