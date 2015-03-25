@@ -32,21 +32,51 @@ Relocator::~Relocator() {
 
 void Relocator::partialScanRelocation(Relocation& pReloc,
                                       Module& pModule) {
-  // if we meet a section symbol
-  if (pReloc.symInfo()->type() == ResolveInfo::Section) {
-    LDSymbol* input_sym = pReloc.symInfo()->outSymbol();
+  ResolveInfo* sym_info = pReloc.symInfo();
+  if (!sym_info->outSymbol()->hasFragRef())
+    return;
 
-    // 1. update the relocation target offset
-    assert(input_sym->hasFragRef());
-    uint64_t offset = input_sym->fragRef()->getOutputOffset();
-    pReloc.target() += offset;
+  LDSection& target_sect = sym_info
+                               ->outSymbol()
+                               ->fragRef()
+                               ->frag()
+                               ->getParent()
+                               ->getSection();
 
-    // 2. get output section symbol
-    // get the output LDSection which the symbol defined in
-    const LDSection& out_sect =
-        input_sym->fragRef()->frag()->getParent()->getSection();
+  if (getTarget().isMergeStringSection(target_sect)) {
+    // update the relocation target offset
+    assert(target_sect.hasMergeString());
+    MergeString* merge_string = target_sect.getMergeString();
+    uint64_t off = 0x0u;
+    assert(sym_info->outSymbol()->fragRef()->offset() == 0x0u);
+    if (sym_info->type() == ResolveInfo::Section) {
+      // offset of the relocation against section symbol should be acquired
+      // accordings to input offset
+      off = merge_string->getOutputOffset(getMergeStringOffset(pReloc),
+                *sym_info->outSymbol()->fragRef()->frag());
+    } else {
+      off = merge_string->getOutputOffset(
+                *sym_info->outSymbol()->fragRef()->frag());
+    }
+    pReloc.target() = off;
+
+    // update the relocation target symbol
+    Fragment* sym_frag = sym_info->outSymbol()->fragRef()->frag();
+    LDSection& output_sect = merge_string->getOutputSection(*sym_frag);
+    pReloc.setSymInfo(pModule
+                          .getSectionSymbolSet()
+                          .get(output_sect)
+                          ->resolveInfo());
+  } else if (pReloc.symInfo()->type() == ResolveInfo::Section) {
+    // update the relocation target offset
+    pReloc.target() += pReloc
+                           .symInfo()
+                           ->outSymbol()
+                           ->fragRef()
+                           ->getOutputOffset();
+    // update relocation target symbol
     ResolveInfo* sym_info =
-        pModule.getSectionSymbolSet().get(out_sect)->resolveInfo();
+        pModule.getSectionSymbolSet().get(target_sect)->resolveInfo();
     // set relocation target symbol to the output section symbol's resolveInfo
     pReloc.setSymInfo(sym_info);
   }
