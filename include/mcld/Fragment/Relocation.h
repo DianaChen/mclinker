@@ -78,7 +78,7 @@ class Relocation : public llvm::ilist_node<Relocation> {
   Address place() const;
 
   /// size - the size of the relocation in bit
-  Size size(Relocator& pRelocator) const;
+  Size size(const Relocator& pRelocator) const;
 
   /// symbol info - binding, type
   const ResolveInfo* symInfo() const { return m_pSymInfo; }

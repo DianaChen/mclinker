@@ -135,7 +135,7 @@ void Relocation::setSymInfo(ResolveInfo* pSym) {
   m_pSymInfo = pSym;
 }
 
-Relocation::Size Relocation::size(Relocator& pRelocator) const {
+Relocation::Size Relocation::size(const Relocator& pRelocator) const {
   return pRelocator.getSize(m_Type);
 }
 
