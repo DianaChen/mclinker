@@ -826,10 +826,28 @@ bool ObjectLinker::relocation() {
 
         // bypass the reloc if the symbol is in the discarded input section
         ResolveInfo* info = relocation->symInfo();
-        if (!info->outSymbol()->hasFragRef() &&
-            ResolveInfo::Section == info->type() &&
-            ResolveInfo::Undefined == info->desc())
-          continue;
+        if (ResolveInfo::Section == info->type()) {
+          // Relocation target symbol defined in a Ignore section, but the
+          // relocation section itself is not ignore. For example, debug
+          // information sections.
+          if (info->outSymbol()->hasFragRef() &&
+              info
+                  ->outSymbol()
+                  ->fragRef()
+                  ->frag()
+                  ->getParent()
+                  ->getSection()
+                  .kind()
+                  == LDFileFormat::Ignore)
+            continue;
+
+          // We may remove some data during mergeSections, hence some relocations
+          // target symbol will be discarded with its own LDSection is not Ignore.
+          // For example, CIE and FDE fragment in eh_frame
+          if (!info->outSymbol()->hasFragRef() &&
+              ResolveInfo::Undefined == info->desc())
+            continue;
+        }
 
         relocation->apply(*m_LDBackend.getRelocator());
       }  // for all relocations
