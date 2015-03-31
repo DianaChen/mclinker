@@ -32,23 +32,18 @@ MergeString::MergeString(LDSection& pSection)
   m_pSectionData = SectionData::Create(pSection);
 }
 
-uint64_t MergeString::getOutputOffset(const Fragment& pFrag) const {
-  const Entry& entry = llvm::cast<const Entry>(pFrag);
-  return entry.getOutputEntry().getOffset();
+uint64_t MergeString::getOutputOffset(const FragmentRef& pFragRef) const {
+  const Entry& entry = llvm::cast<const Entry>(*pFragRef.frag());
+  return entry.getOutputEntry().getOffset() + pFragRef.offset();
 }
 
 uint64_t MergeString::getOutputOffset(uint64_t pInputOffset,
-                                      const Fragment& pFrag) const {
-  return doGetOutputOffset(pInputOffset, pFrag);
+                                      const FragmentRef& pFragRef) const {
+  return doGetOutputOffset(pInputOffset, pFragRef);
 }
 
-Fragment& MergeString::getOutputFragment(FragmentRef& pFragRef) {
-  return doGetOutputFragment(pFragRef);
-}
-
-const Fragment&
-MergeString::getOutputFragment(const FragmentRef& pFragRef) const {
-  return doGetOutputFragment(pFragRef);
+void MergeString::updateFragmentRef(FragmentRef& pFragRef) {
+  return doUpdateFragmentRef(pFragRef);
 }
 
 //===----------------------------------------------------------------------===//
@@ -110,20 +105,18 @@ MergeString& MergeStringOutput::merge(MergeString& pOther) {
   return *this;
 }
 
-uint64_t MergeStringOutput::doGetOutputOffset(uint64_t pInputOffset,
-                                              const Fragment& pFrag) const {
+uint64_t
+MergeStringOutput::doGetOutputOffset(uint64_t pInputOffset,
+                                     const FragmentRef& pFragRef) const {
   // get the input MergeString
-  assert(m_FragSectMap.find(&pFrag) != m_FragSectMap.end());
-  return m_FragSectMap.at(&pFrag)->getOutputOffset(pInputOffset, pFrag);
+  assert(m_FragSectMap.find(pFragRef.frag()) != m_FragSectMap.end());
+  return m_FragSectMap.at(pFragRef.frag())->getOutputOffset(pInputOffset,
+                                                            pFragRef);
 }
 
-Fragment& MergeStringOutput::doGetOutputFragment(FragmentRef& pFragRef) {
-  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
-}
-
-const Fragment&
-MergeStringOutput::doGetOutputFragment(const FragmentRef& pFragRef) const {
-  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+void MergeStringOutput::doUpdateFragmentRef(FragmentRef& pFragRef) {
+  Fragment& frag = llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+  pFragRef.assign(frag, pFragRef.offset());
 }
 
 //===----------------------------------------------------------------------===//
@@ -154,37 +147,72 @@ void MergeStringInput::addString(llvm::StringRef pString,
   m_InOffsetMap[pInputOffset] = entry;
 }
 
-uint64_t MergeStringInput::doGetOutputOffset(uint64_t pInputOffset,
-                                             const Fragment& pFrag) const {
-  assert(m_InOffsetMap.find(pInputOffset) != m_InOffsetMap.end());
-  return m_InOffsetMap.at(pInputOffset)->getOutputEntry().getOffset();
+uint64_t
+MergeStringInput::doGetOutputOffset(uint64_t pInputOffset,
+                                    const FragmentRef& pFragRef) const {
+  // A symbol may not refer to the beginning of a string fragment. The beginning
+  // offset of a string fragment would be pInputOffset - pFragRef.offset()
+  const_offset_map_iterator it = m_InOffsetMap.find(
+                                     pInputOffset - pFragRef.offset());
+  if (it != m_InOffsetMap.end()) {
+    return (it->second)->getOutputEntry().getOffset() + pFragRef.offset();
+  }
+  // if the offset does not match any one in input offset map, than we should
+  // find the nearest one prior to it
+  Entry* target_entry = NULL;
+  uint64_t nearest = 0x0u;
+  const_offset_map_iterator end = m_InOffsetMap.end();
+  for (it = m_InOffsetMap.begin(); it != end; ++it) {
+    if (it->first > pInputOffset)
+      continue;
+
+    if (it->first >= nearest) {
+      nearest = it->first;
+      target_entry = it->second;
+    }
+  }
+  assert(target_entry != NULL);
+  return target_entry->getOutputEntry().getOffset()
+             + pFragRef.offset()
+             + pInputOffset
+             - nearest;
 }
 
-Fragment& MergeStringInput::doGetOutputFragment(FragmentRef& pFragRef) {
+void MergeStringInput::doUpdateFragmentRef(FragmentRef& pFragRef) {
+  if (pFragRef.frag()->getParent() == m_pSectionData) {
+    Fragment& frag = llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+    pFragRef.assign(frag, pFragRef.offset());
+    return;
+  }
+
   // If this MergeStringInput is created during MergeSections,
   // the data in the target section has been read into a SectionData as a
   // normal section. And then the data will be read again to MergeString during
   // MergeSections, while this will be done after read symbols. Hence the symbol
   // will point to the fragment in the original SectionData. In this case, we
-  // can only get the output fragment according to the fragment offset (In
-  // finalizeSymbolValue, those symbols defined in this section still hold
-  // FragmentRef to m_pPreservedData)
+  // can only get the output fragment according to the fragment offset.
   // FIXME: this is a trick that we assume the original SectionData contains
   // only one RegionFragment (so the offset could be correct)
-  if (pFragRef.frag()->getParent() != m_pSectionData) {
-    assert(m_InOffsetMap.find(pFragRef.offset()) != m_InOffsetMap.end());
-    return m_InOffsetMap.at(pFragRef.offset())->getOutputEntry();
+  const_offset_map_iterator it = m_InOffsetMap.find(pFragRef.offset());
+  if (it != m_InOffsetMap.end()) {
+    pFragRef.assign(it->second->getOutputEntry(), 0x0u);
+    return;
   }
-  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
-}
+  // find the splitted fragment that this input offset belongs to
+  Entry* target_entry = NULL;
+  uint64_t nearest = 0x0u;
+  const_offset_map_iterator end = m_InOffsetMap.end();
+  for (it = m_InOffsetMap.begin(); it != end; ++it) {
+    if (it->first > pFragRef.offset())
+      continue;
 
-const Fragment&
-MergeStringInput::doGetOutputFragment(const FragmentRef& pFragRef) const {
-  if (pFragRef.frag()->getParent() != m_pSectionData) {
-    assert(m_InOffsetMap.find(pFragRef.offset()) != m_InOffsetMap.end());
-    return m_InOffsetMap.at(pFragRef.offset())->getOutputEntry();
+    if (it->first >= nearest) {
+      nearest = it->first;
+      target_entry = it->second;
+    }
   }
-  return llvm::cast<Entry>(pFragRef.frag())->getOutputEntry();
+  assert(target_entry != NULL);
+  pFragRef.assign(*target_entry, pFragRef.offset() - nearest);
 }
 
 const LDSection&

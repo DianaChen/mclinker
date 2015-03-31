@@ -498,11 +498,7 @@ void ObjectLinker::addSymbolToOutput(ResolveInfo& pInfo, Module& pModule) {
   // the merged one
   if (out_sect != NULL && m_LDBackend.isMergeStringSection(*out_sect)) {
     assert(out_sect->hasMergeString());
-    MergeString* ms = out_sect->getMergeString();
-    out_sym->setFragmentRef(
-        FragmentRef::Create(
-            ms->getOutputFragment(*out_sym->fragRef()),
-            0x0));
+    out_sect->getMergeString()->updateFragmentRef(*out_sym->fragRef());
   }
 
   if (pInfo.shouldForceLocal(m_Config))

@@ -53,10 +53,9 @@ void Relocator::partialScanRelocation(Relocation& pReloc,
       // offset of the relocation against section symbol should be acquired
       // accordings to input offset
       off = merge_string->getOutputOffset(getMergeStringOffset(pReloc),
-                *sym_info->outSymbol()->fragRef()->frag());
+                *sym_info->outSymbol()->fragRef());
     } else {
-      off = merge_string->getOutputOffset(
-                *sym_info->outSymbol()->fragRef()->frag());
+      off = merge_string->getOutputOffset(*sym_info->outSymbol()->fragRef());
     }
     pReloc.target() = off;
 
@@ -158,10 +157,9 @@ Relocator::applyRelocationForMergeString(Relocation& pRelocation,
     // offset of the relocation against section symbol should be acquired
     // accordings to input offset
     off = pTargetSection.getOutputOffset(getMergeStringOffset(pRelocation),
-              *sym_info->outSymbol()->fragRef()->frag());
+              *sym_info->outSymbol()->fragRef());
   } else {
-    off = pTargetSection.getOutputOffset(
-              *sym_info->outSymbol()->fragRef()->frag());
+    off = pTargetSection.getOutputOffset(*sym_info->outSymbol()->fragRef());
   }
   applyMergeStringOffset(pRelocation, off);
   return OK;
