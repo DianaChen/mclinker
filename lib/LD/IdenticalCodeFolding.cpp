@@ -237,11 +237,12 @@ void IdenticalCodeFolding::FoldingCandidate::initConstantContent(
       llvm::format_object<Relocation::Type,
                           Relocation::Address,
                           Relocation::Address,
-                          Relocation::Address> rel_info("%x%llx%llx%llx",
-                                                        rel->type(),
-                                                        rel->symValue(),
-                                                        rel->addend(),
-                                                        rel->place());
+                          Relocation::Address>
+                              rel_info("%x%llx%llx%llx",
+                                       rel->type(),
+                                       rel->symValue(*pBackend.getRelocator()),
+                                       rel->addend(),
+                                       rel->place());
       char rel_str[48];
       rel_info.print(rel_str, sizeof(rel_str));
       content.append(rel_str);

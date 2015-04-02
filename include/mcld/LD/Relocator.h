@@ -111,7 +111,7 @@ class Relocator {
 
   /// getMergeStringOffset - get the offset from the relocation target. This is
   /// used to get the relocation target symbol offset.
-  virtual uint32_t getMergeStringOffset(Relocation& pReloc) const = 0;
+  virtual uint32_t getMergeStringOffset(const Relocation& pReloc) const = 0;
 
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.

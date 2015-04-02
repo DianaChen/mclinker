@@ -148,7 +148,7 @@ class X86_32Relocator : public X86Relocator {
 
   /// getMergeStringOffset - get the offset from the relocation target. This is
   /// used to get the relocation target symbol offset.
-  uint32_t getMergeStringOffset(Relocation& pReloc) const;
+  uint32_t getMergeStringOffset(const Relocation& pReloc) const;
 
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.
@@ -214,7 +214,7 @@ class X86_64Relocator : public X86Relocator {
 
   /// getMergeStringOffset - get the offset from the relocation target. This is
   /// used to get the relocation target symbol offset.
-  uint32_t getMergeStringOffset(Relocation& pReloc) const;
+  uint32_t getMergeStringOffset(const Relocation& pReloc) const;
 
   /// applyMergeStringOffset - apply the relocation target to specific offset.
   /// This is used to set the relocation against merge string sections.

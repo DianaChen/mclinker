@@ -10,11 +10,13 @@
 
 #include "mcld/LD/LDSection.h"
 #include "mcld/LD/LDSymbol.h"
+#include "mcld/LD/MergeString.h"
 #include "mcld/LD/RelocationFactory.h"
 #include "mcld/LD/Relocator.h"
 #include "mcld/LD/ResolveInfo.h"
 #include "mcld/LD/SectionData.h"
 #include "mcld/Support/MsgHandling.h"
+#include "mcld/Target/TargetLDBackend.h"
 
 #include <llvm/Support/ManagedStatic.h>
 
@@ -83,14 +85,38 @@ Relocation::Address Relocation::place() const {
   return sect_addr + m_TargetAddress.getOutputOffset();
 }
 
-Relocation::Address Relocation::symValue() const {
-  if (m_pSymInfo->type() == ResolveInfo::Section &&
-      m_pSymInfo->outSymbol()->hasFragRef()) {
-    const FragmentRef* fragRef = m_pSymInfo->outSymbol()->fragRef();
-    return fragRef->frag()->getParent()->getSection().addr() +
-           fragRef->getOutputOffset();
+Relocation::Address Relocation::symValue(const Relocator& pRelocator) const {
+  const FragmentRef* frag_ref = m_pSymInfo->outSymbol()->fragRef();
+  bool sect_sym = false;
+  bool in_ms_sect = false;
+  if (m_pSymInfo->outSymbol()->hasFragRef()) {
+    sect_sym = (m_pSymInfo->type() == ResolveInfo::Section);
+    in_ms_sect = pRelocator.getTarget().isMergeStringSection(
+                     frag_ref->frag()->getParent()->getSection());
   }
-  return m_pSymInfo->outSymbol()->value();
+
+  Relocation::Address addr = 0x0;
+  if (!in_ms_sect) {
+    if (!sect_sym) {
+      addr = m_pSymInfo->outSymbol()->value();
+    } else {
+      addr = frag_ref->frag()->getParent()->getSection().addr() +
+                 frag_ref->getOutputOffset();
+    }
+  } else {
+    // symbol in merge string section
+    const LDSection& section = frag_ref->frag()->getParent()->getSection();
+    assert(section.hasMergeString());
+    const MergeString* ms = section.getMergeString();
+    if (sect_sym) {
+      uint64_t off = ms->getOutputOffset(pRelocator.getMergeStringOffset(*this),
+                                         *frag_ref);
+      addr = off + section.addr();
+    } else {
+      addr = ms->getOutputOffset(*frag_ref) + section.addr();
+    }
+  }
+  return addr;
 }
 
 void Relocation::apply(Relocator& pRelocator) {

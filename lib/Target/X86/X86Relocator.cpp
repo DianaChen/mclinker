@@ -830,11 +830,7 @@ void X86_32Relocator::convertTLSIEtoLE(Relocation& pReloc,
   pReloc.setType(llvm::ELF::R_386_TLS_LE);
 }
 
-uint32_t X86_32Relocator::getMergeStringOffset(Relocation& pReloc) const {
-  if (pReloc.type() != llvm::ELF::R_386_32)
-    error(diag::unsupport_reloc_for_merge_string)
-        << getName(pReloc.type()) << "mclinker@googlegroups.com";
-
+uint32_t X86_32Relocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target();
   else
@@ -862,7 +858,7 @@ Relocator::Result none(Relocation& pReloc, X86_32Relocator& pParent) {
 Relocator::Result abs(Relocation& pReloc, X86_32Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   bool has_dyn_rel = pParent.getTarget().symbolNeedsDynRel(
       *rsym, (rsym->reserved() & X86Relocator::ReservePLT), true);
 
@@ -899,7 +895,7 @@ Relocator::Result abs(Relocation& pReloc, X86_32Relocator& pParent) {
 Relocator::Result rel(Relocation& pReloc, X86_32Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   Relocator::DWord P = pReloc.place();
   bool has_dyn_rel = pParent.getTarget().symbolNeedsDynRel(
       *rsym, (rsym->reserved() & X86Relocator::ReservePLT), true);
@@ -933,7 +929,7 @@ Relocator::Result rel(Relocation& pReloc, X86_32Relocator& pParent) {
 Relocator::Result gotoff32(Relocation& pReloc, X86_32Relocator& pParent) {
   Relocator::DWord A = pReloc.target() + pReloc.addend();
   Relocator::Address GOT_ORG = helper_GOT_ORG(pParent);
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
 
   pReloc.target() = S + A - GOT_ORG;
   return Relocator::OK;
@@ -959,7 +955,7 @@ Relocator::Result got32(Relocation& pReloc, X86_32Relocator& pParent) {
   X86_32GOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   assert(got_entry != NULL);
   if (got_entry->getValue() == X86Relocator::SymVal)
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
 
   Relocator::Address GOT_S = helper_get_GOT_address(pReloc, pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
@@ -976,7 +972,7 @@ Relocator::Result plt32(Relocation& pReloc, X86_32Relocator& pParent) {
   if ((pReloc.symInfo()->reserved() & X86Relocator::ReservePLT))
     PLT_S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
   else
-    PLT_S = pReloc.symValue();
+    PLT_S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
   Relocator::Address P = pReloc.place();
   pReloc.target() = PLT_S + A - P;
@@ -1001,7 +997,7 @@ Relocator::Result tls_gd(Relocation& pReloc, X86_32Relocator& pParent) {
   // set the got_entry2 value to symbol value
   if (rsym->isLocal())
     pParent.getSymGOTMap().lookUpSecondEntry(*rsym)->setValue(
-        pReloc.symValue());
+        pReloc.symValue(pParent));
 
   // perform relocation to the first got entry
   Relocator::DWord A = pReloc.target() + pReloc.addend();
@@ -1033,7 +1029,7 @@ Relocator::Result tls_ldm(Relocation& pReloc, X86_32Relocator& pParent) {
 Relocator::Result tls_ldo_32(Relocation& pReloc, X86_32Relocator& pParent) {
   // FIXME: no linker optimization for TLS relocation
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   pReloc.target() = S + A;
   return Relocator::OK;
 }
@@ -1091,7 +1087,7 @@ Relocator::Result tls_le(Relocation& pReloc, X86_32Relocator& pParent) {
           llvm::ELF::PT_TLS, llvm::ELF::PF_R, 0x0);
   assert(tls_seg != pParent.getTarget().elfSegmentTable().end());
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   pReloc.target() = S + A - (*tls_seg)->memsz();
   return Relocator::OK;
 }
@@ -1499,11 +1495,7 @@ void X86_64Relocator::scanGlobalReloc(Relocation& pReloc,
   }  // end switch
 }
 
-uint32_t X86_64Relocator::getMergeStringOffset(Relocation& pReloc) const {
-  if (pReloc.type() != llvm::ELF::R_X86_64_32)
-    error(diag::unsupport_reloc_for_merge_string)
-        << getName(pReloc.type()) << "mclinker@googlegroups.com";
-
+uint32_t X86_64Relocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target() + pReloc.addend();
   else
@@ -1531,7 +1523,7 @@ Relocator::Result none(Relocation& pReloc, X86_64Relocator& pParent) {
 Relocator::Result abs(Relocation& pReloc, X86_64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   Relocation* dyn_rel = pParent.getRelRelMap().lookUp(pReloc);
   bool has_dyn_rel = (dyn_rel != NULL);
 
@@ -1577,7 +1569,7 @@ Relocator::Result abs(Relocation& pReloc, X86_64Relocator& pParent) {
 Relocator::Result signed32(Relocation& pReloc, X86_64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
 
   // There should be no dynamic relocations for R_X86_64_32S.
   if (pParent.getRelRelMap().lookUp(pReloc) != NULL)
@@ -1612,12 +1604,12 @@ Relocator::Result gotpcrel(Relocation& pReloc, X86_64Relocator& pParent) {
   // set symbol value of the got entry if needed
   X86_64GOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   if (X86Relocator::SymVal == got_entry->getValue())
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
 
   // setup relocation addend if needed
   Relocation* dyn_rel = pParent.getRelRelMap().lookUp(pReloc);
   if ((dyn_rel != NULL) && (X86Relocator::SymVal == dyn_rel->addend())) {
-    dyn_rel->setAddend(pReloc.symValue());
+    dyn_rel->setAddend(pReloc.symValue(pParent));
   }
 
   Relocator::Address GOT_S = helper_get_GOT_address(pReloc, pParent);
@@ -1635,7 +1627,7 @@ Relocator::Result plt32(Relocation& pReloc, X86_64Relocator& pParent) {
   if ((pReloc.symInfo()->reserved() & X86Relocator::ReservePLT))
     PLT_S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
   else
-    PLT_S = pReloc.symValue();
+    PLT_S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
   Relocator::Address P = pReloc.place();
   pReloc.target() = PLT_S + A - P;
@@ -1648,7 +1640,7 @@ Relocator::Result plt32(Relocation& pReloc, X86_64Relocator& pParent) {
 Relocator::Result rel(Relocation& pReloc, X86_64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   Relocator::DWord P = pReloc.place();
 
   LDSection& target_sect = pReloc.targetRef().frag()->getParent()->getSection();

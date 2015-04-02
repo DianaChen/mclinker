@@ -40,11 +40,13 @@ class MipsRelocationInfo {
     return false;
   }
 
-  MipsRelocationInfo(Relocation& pParent, bool pIsRel)
+  MipsRelocationInfo(Relocation& pParent,
+                     bool pIsRel,
+                     const Relocator& pRelocator)
       : m_Parent(&pParent),
         m_Type(pParent.type()),
         m_Addend(pIsRel ? pParent.target() : pParent.addend()),
-        m_Symbol(pParent.symValue()),
+        m_Symbol(pParent.symValue(pRelocator)),
         m_Result(pParent.target()) {}
 
   bool isNone() const { return llvm::ELF::R_MIPS_NONE == type(); }
@@ -160,7 +162,7 @@ Relocator::Result MipsRelocator::doApplyRelocation(Relocation& pReloc) {
     return OK;
   }
 
-  for (MipsRelocationInfo info(pReloc, isRel()); !info.isNone();
+  for (MipsRelocationInfo info(pReloc, isRel(), *this); !info.isNone();
        info = info.next()) {
     if (info.type() >= sizeof(ApplyFunctions) / sizeof(ApplyFunctions[0]))
       return Unknown;
@@ -204,7 +206,7 @@ void MipsRelocator::scanRelocation(Relocation& pReloc,
   if ((pSection.getLink()->flag() & llvm::ELF::SHF_ALLOC) == 0)
     return;
 
-  for (MipsRelocationInfo info(pReloc, isRel()); !info.isNone();
+  for (MipsRelocationInfo info(pReloc, isRel(), *this); !info.isNone();
        info = info.next()) {
     // We test isLocal or if pInputSym is not a dynamic symbol
     // We assume -Bsymbolic to bind all symbols internaly via !rsym->isDyn()
@@ -622,7 +624,7 @@ Fragment& MipsRelocator::getGlobalGOTEntry(MipsRelocationInfo& pReloc) {
   if (got.isPrimaryGOTConsumed())
     setupRelDynEntry(*FragmentRef::Create(*got_entry, 0), rsym);
   else
-    got.setEntryValue(got_entry, pReloc.parent().symValue());
+    got.setEntryValue(got_entry, pReloc.parent().symValue(*this));
 
   got.recordGlobalEntry(rsym, got_entry);
 
@@ -709,10 +711,7 @@ uint64_t MipsRelocator::getPLTAddress(ResolveInfo& rsym) {
   return getTarget().getPLT().addr() + plt->getOffset();
 }
 
-uint32_t MipsRelocator::getMergeStringOffset(Relocation& pReloc) const {
-  if (pReloc.type() != llvm::ELF::R_MIPS_32)
-    error(diag::unsupport_reloc_for_merge_string)
-        << getName(pReloc.type()) << "mclinker@googlegroups.com";
+uint32_t MipsRelocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target() + pReloc.addend();
   else

@@ -399,11 +399,8 @@ void AArch64Relocator::scanRelocation(Relocation& pReloc,
     issueUndefRef(pReloc, pSection, pInput);
 }
 
-uint32_t AArch64Relocator::getMergeStringOffset(Relocation& pReloc) const {
-  if (pReloc.type() != llvm::ELF::R_AARCH64_ABS32)
-    error(diag::unsupport_reloc_for_merge_string)
-        << getName(pReloc.type()) << "mclinker@googlegroups.com";
-
+uint32_t
+AArch64Relocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target() + pReloc.addend();
   else
@@ -435,7 +432,7 @@ Relocator::Result unsupported(Relocation& pReloc, AArch64Relocator& pParent) {
 Relocator::Result abs(Relocation& pReloc, AArch64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   Relocation* dyn_rel = pParent.getRelRelMap().lookUp(pReloc);
   bool has_dyn_rel = (dyn_rel != NULL);
 
@@ -480,7 +477,7 @@ Relocator::Result abs(Relocation& pReloc, AArch64Relocator& pParent) {
 // R_AARCH64_PREL16: S + A - P
 Relocator::Result rel(Relocation& pReloc, AArch64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.addend();
   Relocator::DWord P = pReloc.place();
 
@@ -513,7 +510,7 @@ Relocator::Result rel(Relocation& pReloc, AArch64Relocator& pParent) {
 // R_AARCH64_ADD_ABS_LO12_NC: S + A
 Relocator::Result add_abs_lo12(Relocation& pReloc, AArch64Relocator& pParent) {
   Relocator::Address value = 0x0;
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.addend();
 
   value = helper_get_page_offset(S + A);
@@ -525,7 +522,7 @@ Relocator::Result add_abs_lo12(Relocation& pReloc, AArch64Relocator& pParent) {
 // R_AARCH64_ADR_PREL_LO21: S + A - P
 Relocator::Result adr_prel_lo21(Relocation& pReloc, AArch64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   // if plt entry exists, the S value is the plt entry address
   if (rsym->reserved() & AArch64Relocator::ReservePLT) {
     S = helper_get_PLT_address(*rsym, pParent);
@@ -544,7 +541,7 @@ Relocator::Result adr_prel_lo21(Relocation& pReloc, AArch64Relocator& pParent) {
 Relocator::Result adr_prel_pg_hi21(Relocation& pReloc,
                                    AArch64Relocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   // if plt entry exists, the S value is the plt entry address
   if (rsym->reserved() & AArch64Relocator::ReservePLT) {
     S = helper_get_PLT_address(*rsym, pParent);
@@ -573,7 +570,7 @@ Relocator::Result call(Relocation& pReloc, AArch64Relocator& pParent) {
     return Relocator::OK;
   }
 
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.addend();
   Relocator::Address P = pReloc.place();
 
@@ -602,7 +599,7 @@ Relocator::Result condbr(Relocation& pReloc, AArch64Relocator& pParent) {
     return Relocator::OK;
   }
 
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.addend();
   Relocator::Address P = pReloc.place();
 
@@ -635,11 +632,11 @@ Relocator::Result adr_got_page(Relocation& pReloc, AArch64Relocator& pParent) {
   // setup got entry value if needed
   AArch64GOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   if (got_entry != NULL && AArch64Relocator::SymVal == got_entry->getValue())
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
   // setup relocation addend if needed
   Relocation* dyn_rela = pParent.getRelRelMap().lookUp(pReloc);
   if ((dyn_rela != NULL) && (AArch64Relocator::SymVal == dyn_rela->addend())) {
-    dyn_rela->setAddend(pReloc.symValue());
+    dyn_rela->setAddend(pReloc.symValue(pParent));
   }
   return Relocator::OK;
 }
@@ -659,12 +656,12 @@ Relocator::Result ld64_got_lo12(Relocation& pReloc, AArch64Relocator& pParent) {
   // setup got entry value if needed
   AArch64GOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   if (got_entry != NULL && AArch64Relocator::SymVal == got_entry->getValue())
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
 
   // setup relocation addend if needed
   Relocation* dyn_rela = pParent.getRelRelMap().lookUp(pReloc);
   if ((dyn_rela != NULL) && (AArch64Relocator::SymVal == dyn_rela->addend())) {
-    dyn_rela->setAddend(pReloc.symValue());
+    dyn_rela->setAddend(pReloc.symValue(pParent));
   }
 
   return Relocator::OK;
@@ -676,7 +673,7 @@ Relocator::Result ld64_got_lo12(Relocation& pReloc, AArch64Relocator& pParent) {
 // R_AARCH64_LDST64_ABS_LO12_NC: S + A
 // R_AARCH64_LDST128_ABS_LO12_NC: S + A
 Relocator::Result ldst_abs_lo12(Relocation& pReloc, AArch64Relocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A = pReloc.addend();
   Relocator::DWord X = helper_get_page_offset(S + A);
 

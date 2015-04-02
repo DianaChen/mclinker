@@ -69,7 +69,7 @@ class Relocation : public llvm::ilist_node<Relocation> {
   Type type() const { return m_Type; }
 
   /// symValue - S value - the symbol address
-  Address symValue() const;
+  Address symValue(const Relocator& pRelocator) const;
 
   /// addend - A value
   Address addend() const { return m_Addend; }

@@ -26,13 +26,14 @@ namespace mcld {
 //=========================================//
 // Relocation helper function              //
 //=========================================//
-static Relocator::DWord getThumbBit(const Relocation& pReloc) {
+static Relocator::DWord getThumbBit(const Relocation& pReloc,
+                                    const Relocator& pRelocator) {
   // Set thumb bit if
   // - symbol has type of STT_FUNC, is defined and with bit 0 of its value set
   Relocator::DWord thumbBit =
       ((!pReloc.symInfo()->isUndef() || pReloc.symInfo()->isDyn()) &&
        (pReloc.symInfo()->type() == ResolveInfo::Function) &&
-       ((pReloc.symValue() & 0x1) != 0))
+       ((pReloc.symValue(pRelocator) & 0x1) != 0))
           ? 1
           : 0;
   return thumbBit;
@@ -757,13 +758,9 @@ void ARMRelocator::scanRelocation(Relocation& pReloc,
     issueUndefRef(pReloc, pSection, pInput);
 }
 
-uint32_t ARMRelocator::getMergeStringOffset(Relocation& pReloc) const {
-  if (pReloc.type() != llvm::ELF::R_ARM_ABS32)
-    error(diag::unsupport_reloc_for_merge_string)
-        << getName(pReloc.type()) << "mclinker@googlegroups.com";
-
+uint32_t ARMRelocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
-    return pReloc.target();
+    return pReloc.target() + pReloc.addend();
   else
     return pReloc.symInfo()->outSymbol()->fragRef()->offset() +
                pReloc.target() + pReloc.addend();
@@ -786,9 +783,9 @@ ARMRelocator::Result none(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_ABS32: (S + A) | T
 ARMRelocator::Result abs32(Relocation& pReloc, ARMRelocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  Relocator::DWord S = pReloc.symValue();
+  Relocator::DWord S = pReloc.symValue(pParent);
   if (T != 0x0)
     helper_clear_thumb_bit(S);
 
@@ -823,8 +820,8 @@ ARMRelocator::Result abs32(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_REL32: ((S + A) | T) - P
 ARMRelocator::Result rel32(Relocation& pReloc, ARMRelocator& pParent) {
   // perform static relocation
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
 
   // An external symbol may need PLT (this reloc is from a stub/veneer)
@@ -848,16 +845,16 @@ ARMRelocator::Result rel32(Relocation& pReloc, ARMRelocator& pParent) {
 ARMRelocator::Result base_prel(Relocation& pReloc, ARMRelocator& pParent) {
   // perform static relocation
   Relocator::DWord A = pReloc.target() + pReloc.addend();
-  pReloc.target() = pReloc.symValue() + A - pReloc.place();
+  pReloc.target() = pReloc.symValue(pParent) + A - pReloc.place();
   return Relocator::OK;
 }
 
 // R_ARM_GOTOFF32: ((S + A) | T) - GOT_ORG
 ARMRelocator::Result gotoff32(Relocation& pReloc, ARMRelocator& pParent) {
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A = pReloc.target() + pReloc.addend();
   Relocator::Address GOT_ORG = helper_GOT_ORG(pParent);
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   if (T != 0x0)
     helper_clear_thumb_bit(S);
 
@@ -879,7 +876,7 @@ ARMRelocator::Result got_brel(Relocation& pReloc, ARMRelocator& pParent) {
   // setup got entry value if needed
   ARMGOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   if (got_entry != NULL && ARMRelocator::SymVal == got_entry->getValue())
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
   return Relocator::OK;
 }
 
@@ -898,7 +895,7 @@ ARMRelocator::Result got_prel(Relocation& pReloc, ARMRelocator& pParent) {
   // setup got entry value if needed
   ARMGOTEntry* got_entry = pParent.getSymGOTMap().lookUp(*pReloc.symInfo());
   if (got_entry != NULL && ARMRelocator::SymVal == got_entry->getValue())
-    got_entry->setValue(pReloc.symValue());
+    got_entry->setValue(pReloc.symValue(pParent));
   return Relocator::OK;
 }
 
@@ -908,7 +905,7 @@ ARMRelocator::Result thm_jump8(Relocation& pReloc, ARMRelocator& pParent) {
   Relocator::DWord A =
       helper_sign_extend((pReloc.target() & 0x00ff) << 1, 8) + pReloc.addend();
   // S depends on PLT exists or not
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   if (pReloc.symInfo()->reserved() & ARMRelocator::ReservePLT)
     S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
 
@@ -926,7 +923,7 @@ ARMRelocator::Result thm_jump11(Relocation& pReloc, ARMRelocator& pParent) {
   Relocator::DWord A =
       helper_sign_extend((pReloc.target() & 0x07ff) << 1, 11) + pReloc.addend();
   // S depends on PLT exists or not
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   if (pReloc.symInfo()->reserved() & ARMRelocator::ReservePLT)
     S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
 
@@ -944,7 +941,7 @@ ARMRelocator::Result thm_jump19(Relocation& pReloc, ARMRelocator& pParent) {
   uint16_t upper_inst = *(reinterpret_cast<uint16_t*>(&pReloc.target()));
   uint16_t lower_inst = *(reinterpret_cast<uint16_t*>(&pReloc.target()) + 1);
 
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A =
       helper_thumb32_cond_branch_offset(upper_inst, lower_inst);
   Relocator::Address P = pReloc.place();
@@ -954,7 +951,7 @@ ARMRelocator::Result thm_jump19(Relocation& pReloc, ARMRelocator& pParent) {
     S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
     T = 0;  // PLT is not thumb.
   } else {
-    S = pReloc.symValue();
+    S = pReloc.symValue(pParent);
     if (T != 0x0)
       helper_clear_thumb_bit(S);
   }
@@ -995,12 +992,12 @@ ARMRelocator::Result call(Relocation& pReloc, ARMRelocator& pParent) {
     return Relocator::OK;
   }
 
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A =
       helper_sign_extend((pReloc.target() & 0x00FFFFFFu) << 2, 26) +
       pReloc.addend();
   Relocator::Address P = pReloc.place();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   if (T != 0x0)
     helper_clear_thumb_bit(S);
 
@@ -1051,7 +1048,7 @@ ARMRelocator::Result thm_call(Relocation& pReloc, ARMRelocator& pParent) {
   uint16_t upper_inst = *(reinterpret_cast<uint16_t*>(&pReloc.target()));
   uint16_t lower_inst = *(reinterpret_cast<uint16_t*>(&pReloc.target()) + 1);
 
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A = helper_thumb32_branch_offset(upper_inst, lower_inst);
   Relocator::Address P = pReloc.place();
   Relocator::Address S;
@@ -1061,7 +1058,7 @@ ARMRelocator::Result thm_call(Relocation& pReloc, ARMRelocator& pParent) {
     S = helper_get_PLT_address(*pReloc.symInfo(), pParent);
     T = 0;  // PLT is not thumb.
   } else {
-    S = pReloc.symValue();
+    S = pReloc.symValue(pParent);
     if (T != 0x0)
       helper_clear_thumb_bit(S);
   }
@@ -1106,8 +1103,8 @@ ARMRelocator::Result thm_call(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_MOVW_ABS_NC: (S + A) | T
 ARMRelocator::Result movw_abs_nc(Relocation& pReloc, ARMRelocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A =
       helper_extract_movw_movt_addend(pReloc.target()) + pReloc.addend();
   if (T != 0x0)
@@ -1134,8 +1131,8 @@ ARMRelocator::Result movw_abs_nc(Relocation& pReloc, ARMRelocator& pParent) {
 
 // R_ARM_MOVW_PREL_NC: ((S + A) | T) - P
 ARMRelocator::Result movw_prel_nc(Relocation& pReloc, ARMRelocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord P = pReloc.place();
   Relocator::DWord A =
       helper_extract_movw_movt_addend(pReloc.target()) + pReloc.addend();
@@ -1154,7 +1151,7 @@ ARMRelocator::Result movw_prel_nc(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_MOVT_ABS: S + A
 ARMRelocator::Result movt_abs(Relocation& pReloc, ARMRelocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord A =
       helper_extract_movw_movt_addend(pReloc.target()) + pReloc.addend();
 
@@ -1179,7 +1176,7 @@ ARMRelocator::Result movt_abs(Relocation& pReloc, ARMRelocator& pParent) {
 
 // R_ARM_MOVT_PREL: S + A - P
 ARMRelocator::Result movt_prel(Relocation& pReloc, ARMRelocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord P = pReloc.place();
   Relocator::DWord A =
       helper_extract_movw_movt_addend(pReloc.target()) + pReloc.addend();
@@ -1194,8 +1191,8 @@ ARMRelocator::Result movt_prel(Relocation& pReloc, ARMRelocator& pParent) {
 ARMRelocator::Result thm_movw_abs_nc(Relocation& pReloc,
                                      ARMRelocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   if (T != 0x0)
     helper_clear_thumb_bit(S);
 
@@ -1229,8 +1226,8 @@ ARMRelocator::Result thm_movw_abs_nc(Relocation& pReloc,
 // R_ARM_THM_MOVW_PREL_NC: ((S + A) | T) - P
 ARMRelocator::Result thm_movw_prel_nc(Relocation& pReloc,
                                       ARMRelocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord P = pReloc.place();
   if (T != 0x0)
     helper_clear_thumb_bit(S);
@@ -1253,8 +1250,8 @@ ARMRelocator::Result thm_movw_prel_nc(Relocation& pReloc,
 // R_ARM_THM_MOVW_BREL_NC: ((S + A) | T) - B(S)
 // R_ARM_THM_MOVW_BREL: ((S + A) | T) - B(S)
 ARMRelocator::Result thm_movw_brel(Relocation& pReloc, ARMRelocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::Address S = pReloc.symValue(pParent);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord P = pReloc.place();
   if (T != 0x0)
     helper_clear_thumb_bit(S);
@@ -1278,7 +1275,7 @@ ARMRelocator::Result thm_movw_brel(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_THM_MOVT_ABS: S + A
 ARMRelocator::Result thm_movt_abs(Relocation& pReloc, ARMRelocator& pParent) {
   ResolveInfo* rsym = pReloc.symInfo();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
 
   // get lower and upper 16 bit instructions from relocation targetData
   uint16_t upper_inst = *(reinterpret_cast<uint16_t*>(&pReloc.target()));
@@ -1312,7 +1309,7 @@ ARMRelocator::Result thm_movt_abs(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_THM_MOVT_PREL: S + A - P
 // R_ARM_THM_MOVT_BREL: S + A - B(S)
 ARMRelocator::Result thm_movt_prel(Relocation& pReloc, ARMRelocator& pParent) {
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   Relocator::DWord P = pReloc.place();
 
   // get lower and upper 16 bit instructions from relocation targetData
@@ -1334,10 +1331,10 @@ ARMRelocator::Result thm_movt_prel(Relocation& pReloc, ARMRelocator& pParent) {
 // R_ARM_PREL31: ((S + A) | T) - P
 ARMRelocator::Result prel31(Relocation& pReloc, ARMRelocator& pParent) {
   Relocator::DWord target = pReloc.target();
-  Relocator::DWord T = getThumbBit(pReloc);
+  Relocator::DWord T = getThumbBit(pReloc, pParent);
   Relocator::DWord A = helper_sign_extend(target, 31) + pReloc.addend();
   Relocator::DWord P = pReloc.place();
-  Relocator::Address S = pReloc.symValue();
+  Relocator::Address S = pReloc.symValue(pParent);
   if (T != 0x0)
     helper_clear_thumb_bit(S);
 
