@@ -94,10 +94,6 @@ class Relocation : public llvm::ilist_node<Relocation> {
 
   void apply(Relocator& pRelocator);
 
-  /// updateAddend - A relocation with a section symbol must update addend
-  /// before reading its value.
-  void updateAddend();
-
   /// ----- modifiers ----- ///
   void setType(Type pType);
 

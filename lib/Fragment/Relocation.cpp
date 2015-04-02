@@ -165,12 +165,4 @@ Relocation::Size Relocation::size(const Relocator& pRelocator) const {
   return pRelocator.getSize(m_Type);
 }
 
-void Relocation::updateAddend() {
-  // Update value keep in addend if we meet a section symbol
-  if (m_pSymInfo->type() == ResolveInfo::Section) {
-    uint32_t offset = m_pSymInfo->outSymbol()->fragRef()->getOutputOffset();
-    m_Addend += offset;
-  }
-}
-
 }  // namespace mcld

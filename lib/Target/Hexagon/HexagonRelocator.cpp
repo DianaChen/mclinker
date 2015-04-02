@@ -474,10 +474,11 @@ LDSymbol& HexagonRelocator::defineSymbolforCopyReloc(
 
 void HexagonRelocator::partialScanRelocation(Relocation& pReloc,
                                              Module& pModule) {
-  pReloc.updateAddend();
   // if we meet a section symbol
   if (pReloc.symInfo()->type() == ResolveInfo::Section) {
     LDSymbol* input_sym = pReloc.symInfo()->outSymbol();
+    // Update the relocation addend
+    pReloc.setAddend(pReloc.addend() + input_sym->fragRef()->getOutputOffset());
 
     // 1. update the relocation target offset
     assert(input_sym->hasFragRef());
