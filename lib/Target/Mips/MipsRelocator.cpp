@@ -685,32 +685,6 @@ bool MipsRelocator::isN64ABI() const {
   return config().targets().is64Bits();
 }
 
-uint64_t MipsRelocator::getPLTAddress(ResolveInfo& rsym) {
-  assert((rsym.reserved() & MipsRelocator::ReservePLT) &&
-         "Symbol does not require a PLT entry");
-
-  SymPLTMap::const_iterator it = m_SymPLTMap.find(&rsym);
-
-  Fragment* plt;
-
-  if (it != m_SymPLTMap.end()) {
-    plt = it->second.first;
-  } else {
-    plt = getTarget().getPLT().consume();
-
-    Fragment* got = getTarget().getGOTPLT().consume();
-    Relocation* rel = getTarget().getRelPLT().consumeEntry();
-
-    rel->setType(llvm::ELF::R_MIPS_JUMP_SLOT);
-    rel->targetRef().assign(*got);
-    rel->setSymInfo(&rsym);
-
-    m_SymPLTMap[&rsym] = PLTDescriptor(plt, got);
-  }
-
-  return getTarget().getPLT().addr() + plt->getOffset();
-}
-
 uint32_t MipsRelocator::getMergeStringOffset(const Relocation& pReloc) const {
   if (pReloc.symInfo()->type() == ResolveInfo::Section)
     return pReloc.target() + pReloc.addend();
