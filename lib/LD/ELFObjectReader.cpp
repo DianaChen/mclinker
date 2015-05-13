@@ -213,7 +213,7 @@ bool ELFObjectReader::readSections(Input& pInput) {
                                                                    false);
           m_pMergeStringReader->read<32, true>(pInput, *merge_string);
         } else {
-        SectionData* sd = IRBuilder::CreateSectionData(**section);
+          SectionData* sd = IRBuilder::CreateSectionData(**section);
           if (!m_pELFReader->readRegularSection(pInput, *sd))
             fatal(diag::err_cannot_read_section) << (*section)->name();
         }
