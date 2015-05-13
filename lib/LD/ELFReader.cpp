@@ -140,7 +140,7 @@ bool ELFReader<32, true>::readSymbols(Input& pInput,
     }
 
     SectionData* target_data = NULL;
-    if (section != NULL) {
+    if (!is_dyn_obj && section != NULL) {
       if (section->kind() == LDFileFormat::EhFrame)
         target_data = section->getEhFrame()->getSectionData();
       else if (m_Backend.isMergeStringSection(*section))
@@ -148,6 +148,7 @@ bool ELFReader<32, true>::readSymbols(Input& pInput,
       else
         target_data = section->getSectionData();
     }
+
     LDSymbol* psym = pBuilder.AddSymbol(pInput,
                                         ld_name,
                                         ld_type,
@@ -669,7 +670,7 @@ bool ELFReader<64, true>::readSymbols(Input& pInput,
     }
 
     SectionData* target_data = NULL;
-    if (section != NULL) {
+    if (!is_dyn_obj && section != NULL) {
       if (section->kind() == LDFileFormat::EhFrame)
         target_data = section->getEhFrame()->getSectionData();
       else if (m_Backend.isMergeStringSection(*section))
