@@ -77,10 +77,13 @@ MergeString& MergeStringOutput::merge(MergeString& pOther) {
 
   // traverse the strings in pOther
   uint64_t offset = m_pSection->size();
-  SectionData::iterator it = pOther.getSectionData().begin();
-  while (it != pOther.getSectionData().end()) {
-    if (it->getKind() != Fragment::Region)
+  SectionData::iterator it = pOther.getSectionData().begin(),
+                        end = pOther.getSectionData().end();
+  while (it != end) {
+    if (it->getKind() != Fragment::Region) {
+      ++it;
       continue;
+    }
     Entry* string = &(llvm::cast<Entry>(*it));
     std::pair<StringPoolTy::iterator, bool> res = m_StringPool.insert(string);
     // set the OutputEntry to this string
