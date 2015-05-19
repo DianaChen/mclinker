@@ -111,9 +111,12 @@ Relocation::Address Relocation::symValue(const Relocator& pRelocator) const {
     if (sect_sym) {
       uint64_t off = ms->getOutputOffset(pRelocator.getMergeStringOffset(*this),
                                          *frag_ref);
-      addr = off + section.addr();
+      // FIXME: in relocation applying function, we've counted the target() as
+      // a part of addend, so we need minus target() to prevent from counting
+      // target() twice
+      addr = off + section.addr() - target();
     } else {
-      addr = ms->getOutputOffset(*frag_ref) + section.addr();
+      addr = ms->getOutputOffset(*frag_ref) + section.addr() - target();
     }
   }
   return addr;
