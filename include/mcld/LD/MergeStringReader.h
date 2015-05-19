@@ -30,8 +30,8 @@ class MergeStringReader {
   template <size_t BITCLASS, bool SAME_ENDIAN>
   bool read(Input& pInput, MergeString& pMergeString);
 
-  /// read - read pStrings and split it  into a set of RegionFragment, each with
-  /// only one string.
+  /// read - read pStrings and add it to a MergeString but do not slpit the
+  /// strings
   template <size_t BITCLASS, bool SAME_ENDIAN>
   bool read(llvm::StringRef pStrings, MergeString& pMergeString);
 };

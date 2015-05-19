@@ -69,38 +69,55 @@ void MergeStringOutput::clearStringPool() {
   m_StringPool.clear();
 }
 
-MergeString& MergeStringOutput::merge(MergeString& pOther) {
+MergeString& MergeStringOutput::merge(MergeString& pOther, bool pForce) {
   assert(!pOther.isOutput());
   // Map the first fragment to the input MergeString
   if (!pOther.getSectionData().empty())
     m_FragSectMap[&pOther.getSectionData().front()] = &pOther;
 
-  // traverse the strings in pOther
   uint64_t offset = m_pSection->size();
-  SectionData::iterator it = pOther.getSectionData().begin(),
-                        end = pOther.getSectionData().end();
-  while (it != end) {
-    if (it->getKind() != Fragment::Region) {
-      ++it;
-      continue;
-    }
-    Entry* string = &(llvm::cast<Entry>(*it));
-    std::pair<StringPoolTy::iterator, bool> res = m_StringPool.insert(string);
-    // set the OutputEntry to this string
-    string->setOutputEntry(**res.first);
-    // if the string inserted (which means there is no an identical string in
-    // the pool), then move this string to output SectionData
-    if (res.second) {
-      SectionData::iterator to_be_splice = it;
-      ++it;
-      m_pSectionData->getFragmentList().splice(m_pSectionData->end(),
-          pOther.getSectionData().getFragmentList(), to_be_splice);
-      string->setParent(m_pSectionData);
-      // set fragment offset
-      string->setOffset(offset);
+  if (pForce) {
+    // set the incoming Fragments' parent and offset to the output one and then
+    // add them into output SectionData
+    SectionData::iterator it, end = pOther.getSectionData().end();
+    for (it = pOther.getSectionData().begin(); it != end; ++it) {
+      assert(it->getKind() == Fragment::Region);
+      it->setParent(m_pSectionData);
+      it->setOffset(offset);
+      Entry* string = &(llvm::cast<Entry>(*it));
+      string->setOutputEntry(*string);
       offset += string->getRegion().size();
-    } else {
-      ++it;
+    }
+    // move all contents from pOther
+    m_pSectionData->getFragmentList().splice(
+        m_pSectionData->end(), pOther.getSectionData().getFragmentList());
+  } else {
+    // traverse the strings in pOther
+    SectionData::iterator it = pOther.getSectionData().begin(),
+                          end = pOther.getSectionData().end();
+    while (it != end) {
+      if (it->getKind() != Fragment::Region) {
+        ++it;
+        continue;
+      }
+      Entry* string = &(llvm::cast<Entry>(*it));
+      std::pair<StringPoolTy::iterator, bool> res = m_StringPool.insert(string);
+      // set the OutputEntry to this string
+      string->setOutputEntry(**res.first);
+      // if the string inserted (which means there is no an identical string in
+      // the pool), then move this string to output SectionData
+      if (res.second) {
+        SectionData::iterator to_be_splice = it;
+        ++it;
+        m_pSectionData->getFragmentList().splice(m_pSectionData->end(),
+            pOther.getSectionData().getFragmentList(), to_be_splice);
+        string->setParent(m_pSectionData);
+        // set fragment offset
+        string->setOffset(offset);
+        offset += string->getRegion().size();
+      } else {
+        ++it;
+      }
     }
   }
   // set section size

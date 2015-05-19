@@ -94,8 +94,13 @@ class ObjectBuilder {
 
   /// MergeMSSection - merge the pInputSection to pOutputSection.
   /// pInputSection and pOutputSection are the sections containing merge strings
+  /// @param pForce - Force to add all strings from input to output without
+  /// merge the identical strings into one. An output merge string section
+  /// may contain sections from mergeable and non-mergeable sections.
+  /// Non-mergeable input sections should be forced to add directly
   void MergeMergeString(LDSection& pOutputSection,
-                        LDSection& pInputSection);
+                        LDSection& pInputSection,
+                        bool pForce);
 
   /// MoveSectionData - move the fragment of pFrom to pTo section data.
   static bool MoveSectionData(SectionData& pFrom, SectionData& pTo);

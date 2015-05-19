@@ -123,11 +123,6 @@ class Relocator {
   /// doApplyRelocation - applyRelocation hook
   virtual Result doApplyRelocation(Relocation& pRelocation) = 0;
 
-  /// applyRelocationForMergeString - apply the relocation against the symbol
-  /// define in merge string sections
-  virtual Result applyRelocationForMergeString(Relocation& pRelocation,
-                                               MergeString& pTargetSection);
-
  private:
   const LinkerConfig& m_Config;
 };

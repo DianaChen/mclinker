@@ -119,14 +119,15 @@ void ObjectBuilder::MergeEhFrame(const Input& pInputFile,
 /// MergeMSSection - merge the pInputSection to output one. pInputSection is the
 /// section contains merge strings
 void ObjectBuilder::MergeMergeString(LDSection& pOutputSection,
-                                     LDSection& pInputSection) {
+                                     LDSection& pInputSection,
+                                     bool pForce) {
   MergeString* ms = NULL;
   if (pOutputSection.hasMergeString())
     ms = pOutputSection.getMergeString();
   else
     ms = IRBuilder::CreateMergeString(pOutputSection, true);
 
-  ms->merge(*pInputSection.getMergeString());
+  ms->merge(*pInputSection.getMergeString(), pForce);
   UpdateSectionAlign(pOutputSection, pInputSection);
 }
 

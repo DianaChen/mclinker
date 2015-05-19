@@ -32,7 +32,7 @@ class MergeString {
  protected:
   MergeString()
       : m_pSection(NULL), m_pSectionData(NULL) {}
-  MergeString(LDSection& pSection);
+  explicit MergeString(LDSection& pSection);
 
   virtual ~MergeString() {};
 
@@ -65,7 +65,11 @@ class MergeString {
   }
 
   /// merge - merge string from pOther to this section
-  virtual MergeString& merge(MergeString& pOther) { return *this; }
+  /// @param pForce - force to add all the strings in pOther into this section
+  /// without checking if the string is existed. An output merge string section
+  /// may contain sections from mergeable and non-mergeable sections.
+  /// Non-mergeable input sections should be forced to add directly
+  virtual MergeString& merge(MergeString& pOther, bool pForce) { return *this; }
 
   virtual bool isOutput() const = 0;
 
@@ -145,7 +149,11 @@ class MergeStringOutput : public MergeString {
   }
 
   /// merge - merge string from pOther to this section
-  virtual MergeString& merge(MergeString& pOther);
+  /// @param pForce - force to add all the strings in pOther into this section
+  /// without checking if the string is existed. An output merge string section
+  /// may contain sections from mergeable and non-mergeable sections.
+  /// Non-mergeable input sections should be forced to add directly
+  virtual MergeString& merge(MergeString& pOther, bool pForce);
 
   bool isOutput() const { return true; }
 

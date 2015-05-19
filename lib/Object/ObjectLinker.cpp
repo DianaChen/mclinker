@@ -395,13 +395,13 @@ bool ObjectLinker::mergeSections() {
           if (m_LDBackend.isMergeStringSection(*out_sect)) {
             // if the output is MS section but the input isn't, which means that
             // the input is read in as a regular section, we should read it
-            // again as a MergeString section and set this input as merge string
-            // section
+            // again to MergeString section (but with one region which strings
+            // are not splitted) and mark this input as merge string section
             if (!m_LDBackend.isMergeStringSection(**sect)) {
               SectionData* sd = (*sect)->getSectionData();
               (*sect)->setSectionData(NULL);
               if (sd == NULL)
-                continue;
+                break;
               SectionData::iterator it, end = sd->end();
               for (it = sd->begin(); it != end; ++it) {
                 if ((*it).getKind() != Fragment::Region)
@@ -411,13 +411,17 @@ bool ObjectLinker::mergeSections() {
                     **sect);
               }
               m_LDBackend.setMergeStringSection(**sect);
+              // force to add all strings since this section has no MS flags and
+              // should not be merged
+              builder.MergeMergeString(*out_sect, **sect, true);
+            } else {
+              builder.MergeMergeString(*out_sect, **sect, false);
             }
-            builder.MergeMergeString(*out_sect, **sect);
-             if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
-               error(diag::err_cannot_merge_section) << (*sect)->name()
-                                                     << (*obj)->name();
-               return false;
-             }
+            if (!m_LDBackend.updateSectionFlags(*out_sect, **sect)) {
+              error(diag::err_cannot_merge_section) << (*sect)->name()
+                                                    << (*obj)->name();
+              return false;
+            }
           } else {
           // normal section
             if (!(*sect)->hasSectionData())

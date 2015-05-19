@@ -128,41 +128,22 @@ void Relocator::issueUndefRef(Relocation& pReloc,
 }
 
 Relocator::Result Relocator::applyRelocation(Relocation& pRelocation) {
-  // relocation target symbol defined in merge string sections
-  if (pRelocation.symInfo()->outSymbol()->hasFragRef()) {
-    LDSection& target_sect = pRelocation
-                                 .symInfo()
-                                 ->outSymbol()
-                                 ->fragRef()
-                                 ->frag()
+  // update the targetRef of the relocation if the target in MergeString
+  if (getTarget().isMergeStringSection(pRelocation
+                                           .targetRef()
+                                           .frag()
+                                           ->getParent()
+                                           ->getSection())) {
+    MergeString* target_ms = pRelocation
+                                 .targetRef()
+                                 .frag()
                                  ->getParent()
-                                 ->getSection();
-    if (getTarget().isMergeStringSection(target_sect)) {
-      assert(target_sect.hasMergeString());
-      return applyRelocationForMergeString(pRelocation,
-                                           *target_sect.getMergeString());
-    }
+                                 ->getSection()
+                                 .getMergeString();
+    assert(!target_ms->isOutput());
+    target_ms->updateFragmentRef(pRelocation.targetRef());
   }
   return doApplyRelocation(pRelocation);
-}
-
-Relocator::Result
-Relocator::applyRelocationForMergeString(Relocation& pRelocation,
-                                         MergeString& pTargetSection) {
-  ResolveInfo* sym_info = pRelocation.symInfo();
-  uint64_t off = 0x0u;
-  assert(sym_info->outSymbol()->hasFragRef());
-  assert(sym_info->outSymbol()->fragRef()->offset() == 0x0u);
-  if (sym_info->type() == ResolveInfo::Section) {
-    // offset of the relocation against section symbol should be acquired
-    // accordings to input offset
-    off = pTargetSection.getOutputOffset(getMergeStringOffset(pRelocation),
-              *sym_info->outSymbol()->fragRef());
-  } else {
-    off = pTargetSection.getOutputOffset(*sym_info->outSymbol()->fragRef());
-  }
-  applyMergeStringOffset(pRelocation, off);
-  return OK;
 }
 
 }  // namespace mcld
